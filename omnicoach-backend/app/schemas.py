@@ -78,3 +78,35 @@ class ProposalResponse(BaseModel):
     # day -> DetailedSession (dict form). Kept loosely typed so the expander can
     # evolve without breaking the contract during the prototype phase.
     detailed_sessions: dict = {}
+
+
+# ── User-authored sessions (save / create) ──────────────────────────────────
+
+Role = Literal["warmup", "work", "recovery", "cooldown", "rest"]
+Zone = Literal["Z1", "Z2", "Z3", "Z4", "Z5", "REST"]
+
+
+class SessionDraftStep(BaseModel):
+    """One atomic step of a session the user is saving or building.
+
+    Give exactly one of duration_sec / distance_m (rest steps use duration_sec).
+    """
+
+    role: Role = "work"
+    zone: Zone | None = None
+    duration_sec: int | None = Field(None, ge=1, le=36000)
+    distance_m: int | None = Field(None, ge=1, le=100000)
+
+
+class SessionDraft(BaseModel):
+    """A compact, athlete-agnostic session to persist in the library.
+
+    `name` is the human title; `code` is optional (auto CUS<n> when omitted).
+    """
+
+    name: str = Field(..., min_length=1, max_length=120)
+    method_family: str = "custom"
+    code: str | None = Field(
+        None, description="Explicit code; auto-assigned as CUS<n> when omitted"
+    )
+    steps: list[SessionDraftStep] = Field(..., min_length=1)

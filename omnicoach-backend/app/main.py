@@ -13,7 +13,13 @@ from app.training.session_expander import SessionExpander, paces_for
 from app.config import get_settings
 from app.library.catalog import get_catalog
 from app.llm.provider import LLMError, get_provider
-from app.schemas import AthleteContext, PaceZoneResponse, ProposalResponse
+from app.schemas import (
+    AthleteContext,
+    PaceZoneResponse,
+    ProposalResponse,
+    SessionDraft,
+)
+from app.library.session_writer import SessionWriteError, save_session
 from pydantic import BaseModel
 from app.training.pace_calculator import PaceCalculator
 
@@ -143,33 +149,43 @@ class EditContext(BaseModel):
     context: AthleteContext
     day: str
     current_code: str | None = None
+    all_sessions: bool = False  # True = browse the whole library, ignore phase/budget
 
 
 @app.post("/agents/running/alternatives")
 def running_alternatives(req: EditContext):
-    """List valid swap candidates for one day (manual swap)."""
+    """List swap candidates for one day.
+
+    Default: the phase-appropriate shortlist that fits the athlete's budget.
+    With `all_sessions=true`: the whole library (every family, any length), so
+    the coach can override the automatic filtering. No UI cap either way.
+    """
     s = get_settings()
     try:
         catalog = get_catalog(str(s.library_path))
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
-    provider = get_provider(s)
-    agent = RunningAgent(catalog, provider)
-    entries = agent.alternatives(req.context, exclude=req.current_code)
+    if req.all_sessions:
+        entries = [e for e in catalog.all_entries() if e.code != req.current_code]
+    else:
+        provider = get_provider(s)
+        agent = RunningAgent(catalog, provider)
+        entries = agent.alternatives(req.context, exclude=req.current_code)
     expander = SessionExpander(catalog.reader)
     paces = paces_for(req.context.reference_performance)
     return {
         "day": req.day,
+        "all": req.all_sessions,
+        "total": len(entries),
         "alternatives": [
             {
                 "code": e.code,
                 "family": e.family,
                 "detail": expander.expand(e.code, paces).__dict__,
             }
-            for e in entries[:24]  # cap the list for the UI
+            for e in entries
         ],
     }
-
 
 @app.post("/agents/running/regenerate-session")
 def regenerate_session(req: EditContext):
@@ -201,3 +217,46 @@ def regenerate_session(req: EditContext):
         "model": provider.model,
         "warnings": warnings,
     }
+
+
+# ── Saving / creating library sessions ──────────────────────────────────────
+
+@app.post("/library/sessions", status_code=201)
+def create_library_session(draft: SessionDraft):
+    """Persist a user-authored session (saved from a plan, or built from scratch).
+
+    The session is athlete-agnostic (zones + durations, no personal paces). It
+    is written to the library, the index is rebuilt, and the catalog cache is
+    cleared so the new code is immediately selectable and expandable.
+    """
+    s = get_settings()
+    try:
+        code = save_session(
+            human_name=draft.name,
+            method_family=draft.method_family,
+            steps=[step.model_dump() for step in draft.steps],
+            library_dir=s.library_path,
+            code=draft.code,
+        )
+    except SessionWriteError as e:
+        raise HTTPException(status_code=e.status, detail=str(e)) from e
+
+    # Make the new session visible to every subsequent request.
+    get_catalog.cache_clear()
+    catalog = get_catalog(str(s.library_path))
+
+    # Return it expanded (no paces: it is stored athlete-agnostic).
+    detailed = SessionExpander(catalog.reader).expand(code, None).__dict__
+    return {"code": code, "total_sessions": len(catalog.codes), "detailed": detailed}
+
+
+@app.get("/library/custom-codes")
+def list_custom_codes():
+    """List the codes of user-authored sessions (family CUS)."""
+    s = get_settings()
+    try:
+        catalog = get_catalog(str(s.library_path))
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    codes = [c for c in catalog.codes if c.upper().startswith("CUS")]
+    return {"codes": codes}

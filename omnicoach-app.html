@@ -816,6 +816,8 @@ let editableProposal = null;   // { provider, model, candidates_considered, byDa
 let swapOpenDay = null;        // which day's swap dropdown is open
 let editValuesOpenDay = null;  // which day's step editor is open
 let swapOptions = null;        // cached alternatives for that day
+let swapAll = false;           // swap dropdown: browse the whole library?
+let swapQuery = '';            // swap dropdown: search filter
 let editBusyDay = null;        // day currently regenerating
 
 /* Generic proposal call — used by BOTH the coach panel and athlete self-service.
@@ -868,24 +870,44 @@ function currentCtxFor(a) {
 }
 
 /* ── Manual swap ─────────────────────────────────────────────────────────*/
-async function openSwap(day) {
-  if (swapOpenDay === day) { swapOpenDay = null; swapOptions = null; $('dashboard').innerHTML = coachView(); return; }
+async function fetchSwap(day) {
   const a = COACH_ATHLETES.find(x => x.id === selectedAthlete);
   const cur = editableProposal.byDay[day];
-  swapOpenDay = day; swapOptions = 'loading';
+  swapOptions = 'loading';
   $('dashboard').innerHTML = coachView();
   const r = await fetch(apiBase + '/agents/running/alternatives', {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ context: currentCtxFor(a), day, current_code: cur.code }),
+    body: JSON.stringify({ context: currentCtxFor(a), day, current_code: cur.code, all_sessions: swapAll }),
   }).then(x=>x.json()).catch(()=>null);
   swapOptions = (r && r.alternatives) ? r.alternatives : [];
   $('dashboard').innerHTML = coachView();
 }
 
+async function openSwap(day) {
+  if (swapOpenDay === day) { swapOpenDay = null; swapOptions = null; swapAll = false; swapQuery = ''; $('dashboard').innerHTML = coachView(); return; }
+  swapOpenDay = day; swapAll = false; swapQuery = '';
+  await fetchSwap(day);
+}
+
+/* Toggle the swap dropdown between the phase shortlist and the whole library. */
+function toggleSwapScope(day) {
+  swapAll = !swapAll; swapQuery = '';
+  fetchSwap(day);
+}
+
+/* Client-side filter of the swap list — no re-render, so the input keeps focus. */
+function filterSwapList(q) {
+  swapQuery = q;
+  const ql = (q || '').toLowerCase();
+  document.querySelectorAll('#swap-list [data-swap-item]').forEach(el => {
+    el.style.display = el.dataset.search.includes(ql) ? '' : 'none';
+  });
+}
+
 function chooseSwap(day, code) {
   const opt = (swapOptions || []).find(o => o.code === code);
   if (opt) { editableProposal.byDay[day] = { code: opt.code, rationale: 'Manually selected by the coach.', detail: opt.detail }; editableProposal._edited = true; }
-  swapOpenDay = null; swapOptions = null;
+  swapOpenDay = null; swapOptions = null; swapAll = false; swapQuery = '';
   $('dashboard').innerHTML = coachView();
 }
 
@@ -1296,6 +1318,167 @@ function toggleEditValues(day) {
   $('dashboard').innerHTML = coachView();
 }
 
+/* ── Library: save an edited session / create a new one ─────────────────────
+   Both write to POST /library/sessions. Sessions are athlete-agnostic:
+   we send roles + zones + durations, never personal paces. */
+let libMode = null;        // 'save' | 'add' | null (closed)
+let libDay = null;         // day being saved (save mode)
+let libName = '';
+let builderSteps = [];     // add mode: [{role, zone, dur, dist}]
+let libBusy = false;
+let libMsg = null;         // { ok, text }
+
+function stepsFromDetail(detail) {
+  return (detail.steps || []).map(st => {
+    const zone = (st.zone && /^Z[1-5]$/.test(st.zone)) ? st.zone
+               : (st.role === 'rest' ? 'REST' : (st.zone || null));
+    const out = { role: st.role || 'work', zone };
+    if (st.duration_sec != null)          out.duration_sec = Math.round(st.duration_sec);
+    else if (st.distance_m != null)       out.distance_m   = Math.round(st.distance_m);
+    else if (st.est_duration_sec != null) out.duration_sec = Math.round(st.est_duration_sec);
+    return out;
+  });
+}
+
+function openSaveSession(day) {
+  const entry = editableProposal && editableProposal.byDay[day];
+  if (!entry || !entry.detail) { alert('No session detail to save.'); return; }
+  libMode = 'save'; libDay = day; libName = entry.code || 'Session';
+  libBusy = false; libMsg = null;
+  renderLibraryModal();
+}
+
+function openAddSession() {
+  libMode = 'add'; libDay = null; libName = '';
+  builderSteps = [{ role:'warmup', zone:'Z1', dur:'10:00', dist:'' }];
+  libBusy = false; libMsg = null;
+  renderLibraryModal();
+}
+
+function closeLibrary() { libMode = null; libBusy = false; renderLibraryModal(); }
+
+function syncBuilderInputs() {
+  if (libMode !== 'add') return;
+  builderSteps.forEach((s, i) => {
+    const r = $('bs-role-'+i); if (r) s.role = r.value;
+    const z = $('bs-zone-'+i); if (z) s.zone = z.value;
+    const d = $('bs-dur-'+i);  if (d) s.dur  = d.value;
+    const k = $('bs-dist-'+i); if (k) s.dist = k.value;
+  });
+  const n = $('lib-name'); if (n) libName = n.value;
+}
+
+function addBuilderStep()    { syncBuilderInputs(); builderSteps.push({ role:'work', zone:'Z3', dur:'5:00', dist:'' }); renderLibraryModal(); }
+function removeBuilderStep(i){ syncBuilderInputs(); builderSteps.splice(i, 1); renderLibraryModal(); }
+
+function buildDraftFromBuilder() {
+  const steps = [];
+  for (const s of builderSteps) {
+    const step = { role: s.role, zone: (s.role === 'rest' ? 'REST' : s.zone) };
+    const durSec = (s.dur  && s.dur.trim())  ? parseDurToSec(s.dur.trim())  : null;
+    const distM  = (s.dist && s.dist.trim()) ? parseKmToM(s.dist.trim())    : null;
+    if (durSec != null)      step.duration_sec = Math.round(durSec);
+    else if (distM != null)  step.distance_m   = Math.round(distM);
+    else return { error: 'Each step needs a duration (mm:ss) or a distance (km).' };
+    steps.push(step);
+  }
+  if (!steps.length) return { error: 'Add at least one step.' };
+  return { steps };
+}
+
+async function submitLibrarySession() {
+  syncBuilderInputs();
+  let payloadSteps;
+  if (libMode === 'save') {
+    const entry = editableProposal && editableProposal.byDay[libDay];
+    if (!entry || !entry.detail) { libMsg = { ok:false, text:'No session to save.' }; renderLibraryModal(); return; }
+    payloadSteps = stepsFromDetail(entry.detail);
+  } else {
+    const built = buildDraftFromBuilder();
+    if (built.error) { libMsg = { ok:false, text: built.error }; renderLibraryModal(); return; }
+    payloadSteps = built.steps;
+  }
+  if (!libName || !libName.trim()) { libMsg = { ok:false, text:'Give the session a name.' }; renderLibraryModal(); return; }
+
+  libBusy = true; libMsg = null; renderLibraryModal();
+  try {
+    const r = await fetch(apiBase + '/library/sessions', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name: libName.trim(), method_family: 'custom', steps: payloadSteps }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      const detail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+      libBusy = false; libMsg = { ok:false, text: 'Rejected: ' + detail }; renderLibraryModal(); return;
+    }
+    libBusy = false;
+    libMsg = { ok:true, text: `Saved as ${data.code} — the library now holds ${data.total_sessions} sessions.` };
+    renderLibraryModal();
+  } catch (e) {
+    libBusy = false;
+    libMsg = { ok:false, text: `Cannot reach the back-end at ${apiBase}. Is uvicorn running?` };
+    renderLibraryModal();
+  }
+}
+
+function renderLibraryModal() {
+  let host = $('library-modal');
+  if (!host) { host = document.createElement('div'); host.id = 'library-modal'; document.body.appendChild(host); }
+  if (!libMode) { host.innerHTML = ''; return; }
+
+  const title = libMode === 'save' ? 'Save this session to the library' : 'Create a new session';
+  let body = '';
+
+  if (libMode === 'save') {
+    const entry = editableProposal && editableProposal.byDay[libDay];
+    const steps = (entry && entry.detail && entry.detail.steps) ? entry.detail.steps : [];
+    body = `
+      <p class="text-xs text-oc-gray mb-3">Session <code class="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-[11px] font-bold">${esc(entry ? entry.code : '')}</code> will be saved as a new reusable session. Personal paces are not stored.</p>
+      <div class="border border-gray-200 rounded-xl divide-y divide-gray-100 mb-4 max-h-52 overflow-y-auto">
+        ${steps.map(st => `<div class="flex items-center justify-between px-3 py-2 text-[11px]">
+          <span class="font-bold">${esc(st.role_label || st.role || '')}</span>
+          <span class="text-oc-gray">${st.zone ? esc(st.zone) : 'REST'} · ${st.duration_sec ? fmtDur(st.duration_sec) : (st.distance_m ? ((st.distance_m/1000)+' km') : (st.est_duration_sec ? fmtDur(st.est_duration_sec) : '—'))}</span>
+        </div>`).join('')}
+      </div>`;
+  } else {
+    const roleOpt = (cur) => ['warmup','work','recovery','cooldown','rest'].map(r => `<option value="${r}" ${r===cur?'selected':''}>${r}</option>`).join('');
+    const zoneOpt = (cur) => ['Z1','Z2','Z3','Z4','Z5','REST'].map(z => `<option value="${z}" ${z===cur?'selected':''}>${z}</option>`).join('');
+    body = `
+      <p class="text-xs text-oc-gray mb-3">Build the session step by step. Each step needs a duration (mm:ss) <b>or</b> a distance (km).</p>
+      <div class="space-y-2 mb-3 max-h-64 overflow-y-auto">
+        ${builderSteps.map((s, i) => `
+          <div class="flex flex-wrap items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg p-2">
+            <select id="bs-role-${i}" class="border border-gray-200 rounded px-2 py-1 text-[11px] font-bold">${roleOpt(s.role)}</select>
+            <select id="bs-zone-${i}" class="border border-gray-200 rounded px-2 py-1 text-[11px] font-bold">${zoneOpt(s.zone)}</select>
+            <input id="bs-dur-${i}" value="${esc(s.dur||'')}" placeholder="mm:ss" class="w-20 border border-gray-200 rounded px-2 py-1 text-[11px]"/>
+            <input id="bs-dist-${i}" value="${esc(s.dist||'')}" placeholder="km" class="w-16 border border-gray-200 rounded px-2 py-1 text-[11px]"/>
+            <button onclick="removeBuilderStep(${i})" class="ml-auto text-red-500 font-bold text-xs px-2" title="Remove step">✕</button>
+          </div>`).join('')}
+      </div>
+      <button onclick="addBuilderStep()" class="mb-4 bg-white border-2 border-gray-200 font-bold py-1.5 px-3 rounded-lg text-[11px] hover:bg-gray-50 transition-colors">+ Add step</button>`;
+  }
+
+  const msg = libMsg ? `<p class="text-[11px] font-bold ${libMsg.ok?'text-green-700':'text-red-700'} mb-2">${esc(libMsg.text)}</p>` : '';
+
+  host.innerHTML = `
+    <div class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onclick="if(event.target===this)closeLibrary()">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-heading font-extrabold text-lg">${title}</h3>
+          <button onclick="closeLibrary()" class="text-oc-gray hover:text-oc-dark text-xl leading-none">✕</button>
+        </div>
+        <label class="block text-[11px] font-bold text-oc-gray uppercase mb-1">Session name</label>
+        <input id="lib-name" value="${esc(libName||'')}" placeholder="e.g. Threshold 4x5min" class="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold mb-4 focus:border-oc-dark transition-colors"/>
+        ${body}
+        ${msg}
+        <div class="flex gap-2">
+          <button onclick="submitLibrarySession()" ${libBusy?'disabled':''} class="flex-1 bg-oc-green text-white font-bold py-2.5 rounded-xl text-sm hover:-translate-y-0.5 transition-transform ${libBusy?'opacity-60':''}">${libBusy ? 'Saving…' : (libMode==='save' ? 'Save to library' : 'Create session')}</button>
+          <button onclick="closeLibrary()" class="bg-white border-2 border-gray-200 font-bold py-2.5 px-4 rounded-xl text-sm hover:bg-gray-50 transition-colors">Close</button>
+        </div>
+      </div>
+    </div>`;
+}
+
 /* A full session card — used in the coach editor and the athlete plan.
    `editable` adds the Swap / Regenerate controls. */
 function sessionCard(day, entry, opts = {}) {
@@ -1327,6 +1510,7 @@ function sessionCard(day, entry, opts = {}) {
         <button onclick="openSwap('${day}')" ${busy?'disabled':''} class="flex-1 min-w-[150px] bg-white border-2 border-gray-200 font-bold py-2 rounded-lg text-[11px] hover:bg-gray-50 transition-colors ${swapOpen?'border-oc-dark':''}">↔ Swap workout</button>
         <button onclick="regenSession('${day}')" ${busy?'disabled':''} class="flex-1 min-w-[150px] bg-white border-2 border-gray-200 font-bold py-2 rounded-lg text-[11px] hover:bg-gray-50 transition-colors">${busy?'Regenerating…':'↻ Ask agent to redo'}</button>
         <button onclick="toggleEditValues('${day}')" ${busy?'disabled':''} class="flex-1 min-w-[150px] bg-white border-2 border-gray-200 font-bold py-2 rounded-lg text-[11px] hover:bg-gray-50 transition-colors">${editValuesOpenDay === day ? '✕ Close editor' : '✎ Edit values'}</button>
+        <button onclick="openSaveSession('${day}')" ${busy?'disabled':''} class="flex-1 min-w-[150px] bg-green-50 border-2 border-oc-green text-green-800 font-bold py-2 rounded-lg text-[11px] hover:bg-green-100 transition-colors">💾 Save to library</button>
       </div>
       ${swapOpen ? swapDropdown(day) : ''}
     ` : ''}
@@ -1334,24 +1518,33 @@ function sessionCard(day, entry, opts = {}) {
 }
 
 function swapDropdown(day) {
+  const scopeBtn = `<div class="flex items-center gap-2 mb-2">
+      <button onclick="toggleSwapScope('${day}')" class="px-2 py-1 rounded-md text-[10px] font-bold border-2 ${swapAll?'border-oc-orange text-oc-orange':'border-gray-200 text-oc-gray'} hover:bg-gray-50 transition-colors">${swapAll ? '\u2713 All sessions' : 'Show all sessions'}</button>
+      <span class="text-[10px] text-oc-gray">${swapAll ? 'Whole library \u00b7 all phases' : 'Phase-appropriate only'}</span>
+    </div>`;
   if (swapOptions === 'loading') {
-    return `<div class="border-t border-gray-100 p-3 text-center text-[11px] font-bold text-oc-gray bg-white">Loading alternatives…</div>`;
+    return `<div class="border-t border-gray-100 p-2 bg-white">${scopeBtn}<div class="p-2 text-center text-[11px] font-bold text-oc-gray">Loading\u2026</div></div>`;
   }
-  if (!swapOptions || !swapOptions.length) {
-    return `<div class="border-t border-gray-100 p-3 text-center text-[11px] text-oc-gray bg-white">No other workout fits this phase and budget.</div>`;
-  }
-  return `<div class="border-t border-gray-100 p-2 bg-white max-h-56 overflow-y-auto">
-    <p class="text-[10px] font-bold text-oc-gray uppercase px-2 py-1">Pick a replacement</p>
-    ${swapOptions.map(o => {
-      const km = fmtKm(o.detail && (o.detail.total_distance_m || o.detail.est_total_distance_m));
-      const dur = fmtDur(o.detail && (o.detail.total_duration_sec || o.detail.est_total_duration_sec));
-      return `<button onclick="chooseSwap('${day}','${o.code}')" class="w-full text-left px-2 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
-        <code class="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-[11px] font-bold shrink-0">${esc(o.code)}</code>
-        <span class="text-[11px] text-oc-gray truncate flex-grow">${esc(o.family)}</span>
-        <span class="text-[10px] font-bold text-oc-gray shrink-0">${[dur,km].filter(Boolean).join(' · ')}</span>
-      </button>`;
-    }).join('')}
-  </div>`;
+  const opts = Array.isArray(swapOptions) ? swapOptions : [];
+  const search = opts.length > 12
+    ? `<input oninput="filterSwapList(this.value)" value="${esc(swapQuery)}" placeholder="Search code or family\u2026" class="w-full border border-gray-200 rounded-lg px-2 py-1 text-[11px] mb-2"/>`
+    : '';
+  const body = !opts.length
+    ? `<div class="p-2 text-center text-[11px] text-oc-gray">No workout fits.</div>`
+    : `<div id="swap-list" class="max-h-56 overflow-y-auto">
+        <p class="text-[10px] font-bold text-oc-gray uppercase px-2 py-1">${opts.length} session${opts.length>1?'s':''}</p>
+        ${opts.map(o => {
+          const km = fmtKm(o.detail && (o.detail.total_distance_m || o.detail.est_total_distance_m));
+          const dur = fmtDur(o.detail && (o.detail.total_duration_sec || o.detail.est_total_duration_sec));
+          const s = esc((o.code + ' ' + (o.family||'')).toLowerCase());
+          return `<button data-swap-item data-search="${s}" onclick="chooseSwap('${day}','${o.code}')" class="w-full text-left px-2 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
+            <code class="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-[11px] font-bold shrink-0">${esc(o.code)}</code>
+            <span class="text-[11px] text-oc-gray truncate flex-grow">${esc(o.family)}</span>
+            <span class="text-[10px] font-bold text-oc-gray shrink-0">${[dur,km].filter(Boolean).join(' \u00b7 ')}</span>
+          </button>`;
+        }).join('')}
+      </div>`;
+  return `<div class="border-t border-gray-100 p-2 bg-white">${scopeBtn}${search}${body}</div>`;
 }
 
 function resultBlock() {
@@ -1382,6 +1575,7 @@ function resultBlock() {
       <p class="text-sm font-bold text-oc-dark">Proposed week · ${ep.days.length} sessions${edited ? ' <span class="text-[10px] text-oc-orange">(edited)</span>' : ''}</p>
       <span class="text-[10px] font-bold text-oc-gray bg-white border border-gray-200 px-2 py-1 rounded-md">${esc(ep.provider)} / ${esc(ep.model)} · ${ep.candidates_considered} candidates</span>
     </div>
+    <div class="mb-3"><button onclick="openAddSession()" class="bg-oc-dark text-white font-bold py-1.5 px-3 rounded-lg text-[11px] hover:bg-gray-800 transition-colors">+ Ajouter une séance</button></div>
     <p class="text-[11px] text-oc-gray mb-3">Paces are computed for ${esc(a.name)} from ${a.ctx.reference_performance ? esc(a.ctx.reference_performance) : 'their profile'}. Swap or regenerate any session before validating.</p>
     <div class="space-y-3">
       ${ep.days.map(day => sessionCard(day, ep.byDay[day], { editable: !alreadyReleased })).join('')}
