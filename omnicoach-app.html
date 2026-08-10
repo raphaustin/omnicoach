@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniCoach AI — Multisport Training Plans</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: { extend: {
+    fontFamily: { 'heading': ['"Bricolage Grotesque"','sans-serif'], 'body': ['"Manrope"','sans-serif'] },
+    colors: { oc: {
+      orange:'#f97316', blue:'#3b82f6', green:'#10b981', violet:'#7c3aed',
+      dark:'#1f2937', gray:'#6b7280', light:'#f3f4f6', surface:'#ffffff'
+    }},
+    boxShadow: { 'soft':'0 12px 28px rgba(31,41,55,.08)', 'hover':'0 18px 34px rgba(31,41,55,.12)' }
+  }}
+}
+</script>
+<style>
+  body { background:#f3f4f6; color:#1f2937; }
+  .screen { display:none; }
+  .screen.active { display:block; animation:fade .3s ease-in-out; }
+  @keyframes fade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  .step-dot { transition: all .25s; }
+  input:focus, select:focus, textarea:focus { outline:none }
+  input[type=range] { -webkit-appearance:none; appearance:none; height:6px; border-radius:99px; background:#e5e7eb; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:20px; height:20px; border-radius:50%; background:#1f2937; cursor:pointer; border:3px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.2); }
+  input[type=range]::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#1f2937; cursor:pointer; border:3px solid #fff; }
+  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation:none!important; transition:none!important } }
+</style>
+</head>
+<body class="font-body antialiased min-h-screen">
+
+<!-- ══════════════════════════ LANDING ══════════════════════════ -->
+<div id="screen-landing" class="screen active">
+  <nav class="bg-white/80 backdrop-blur border-b border-gray-200 sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-oc-orange to-red-500 rounded-xl flex items-center justify-center text-white font-heading font-bold text-xl shadow-lg shadow-orange-200">OC</div>
+        <span class="font-heading font-extrabold text-2xl tracking-tight">OmniCoach AI</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="go('login')" class="px-5 py-2.5 rounded-full font-bold text-sm bg-gray-100 text-oc-gray hover:bg-gray-200 transition-all">Log in</button>
+        <button onclick="go('signup')" class="px-5 py-2.5 rounded-full font-bold text-sm bg-oc-dark text-white hover:bg-gray-800 transition-all">Sign up</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-6">
+    <section class="pt-16 pb-14 grid lg:grid-cols-5 gap-10 items-center">
+      <div class="lg:col-span-3">
+        <div class="flex items-center gap-2 mb-5">
+          <span class="px-3 py-1.5 bg-orange-100 text-orange-700 text-xs font-bold rounded-lg border border-orange-200">🏃 Running</span>
+          <span class="px-3 py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg border border-green-200">🚴 Cycling</span>
+          <span class="px-3 py-1.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg border border-blue-200">🏊 Swimming</span>
+        </div>
+        <h1 class="font-heading font-extrabold text-5xl lg:text-6xl leading-[1.05] tracking-tight mb-5">
+          Training plans built<br>the way coaches<br><span class="text-oc-orange">actually build them.</span>
+        </h1>
+        <p class="text-lg text-oc-gray leading-relaxed mb-8 max-w-xl">
+          Describe your goal in your own words. Specialist agents plan each sport, a head coach agent consolidates the weeks, and a real coach signs off before anything reaches you.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <button onclick="go('signup')" class="bg-oc-dark text-white font-bold py-4 px-7 rounded-xl shadow-lg hover:-translate-y-0.5 transition-transform">Create your account</button>
+          <button onclick="go('login')" class="bg-white border-2 border-gray-200 font-bold py-4 px-7 rounded-xl hover:bg-gray-50 transition-colors">I already have one</button>
+        </div>
+      </div>
+
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-[2rem] p-6 shadow-soft border border-gray-100">
+          <p class="text-xs font-bold text-oc-gray uppercase tracking-wide mb-4">Your season, top-down</p>
+          <div class="space-y-2.5">
+            <div class="flex items-center gap-3"><span class="w-16 text-[11px] font-bold text-oc-gray shrink-0">Base</span><div class="h-3 rounded-full bg-oc-blue" style="width:42%"></div><span class="text-[11px] font-bold text-oc-gray">35–45%</span></div>
+            <div class="flex items-center gap-3"><span class="w-16 text-[11px] font-bold text-oc-gray shrink-0">Build</span><div class="h-3 rounded-full bg-oc-green" style="width:32%"></div><span class="text-[11px] font-bold text-oc-gray">25–35%</span></div>
+            <div class="flex items-center gap-3"><span class="w-16 text-[11px] font-bold text-oc-gray shrink-0">Specific</span><div class="h-3 rounded-full bg-oc-orange" style="width:22%"></div><span class="text-[11px] font-bold text-oc-gray">15–25%</span></div>
+            <div class="flex items-center gap-3"><span class="w-16 text-[11px] font-bold text-oc-gray shrink-0">Taper</span><div class="h-3 rounded-full bg-oc-violet" style="width:13%"></div><span class="text-[11px] font-bold text-oc-gray">10–15%</span></div>
+          </div>
+          <div class="mt-5 pt-5 border-t border-gray-100">
+            <p class="text-xs text-oc-gray leading-relaxed">Every plan is built from the top down: diagnosis → macrocycle → mesocycles → weekly microcycle → sessions.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pb-20">
+      <h2 class="font-heading font-bold text-2xl mb-2">Two seats, four agents</h2>
+      <p class="text-oc-gray mb-7">You log in as an athlete or a coach. The experts are AI agents working underneath.</p>
+      <div class="grid sm:grid-cols-2 gap-4 mb-8">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border-t-4 border-oc-violet"><div class="text-2xl mb-2">🏅</div><h3 class="font-bold mb-1">Athlete</h3><p class="text-sm text-oc-gray leading-relaxed">Describes the goal, follows the plan, logs feedback, requests changes.</p></div>
+        <div class="bg-white rounded-2xl p-6 shadow-sm border-t-4 border-oc-dark"><div class="text-2xl mb-2">🧑‍🏫</div><h3 class="font-bold mb-1">Coach</h3><p class="text-sm text-oc-gray leading-relaxed">Reviews the drafted plan and validates it before the athlete sees it.</p></div>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4"><span class="px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded-md">AGENT</span><h4 class="font-bold text-sm mt-2">🧠 Head coach</h4><p class="text-xs text-oc-gray mt-1">Consolidates the experts, resolves conflicts.</p></div>
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4"><span class="px-2 py-1 bg-orange-100 text-orange-700 text-[10px] font-bold rounded-md">AGENT</span><h4 class="font-bold text-sm mt-2">🏃 Running expert</h4><p class="text-xs text-oc-gray mt-1">Plans the run sessions.</p></div>
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4"><span class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-md">AGENT</span><h4 class="font-bold text-sm mt-2">🚴 Cycling expert</h4><p class="text-xs text-oc-gray mt-1">Plans the bike sessions.</p></div>
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4"><span class="px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold rounded-md">AGENT</span><h4 class="font-bold text-sm mt-2">🏊 Swimming expert</h4><p class="text-xs text-oc-gray mt-1">Plans the swim sessions.</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-gray-200 py-8">
+    <div class="max-w-6xl mx-auto px-6 flex flex-wrap gap-3 justify-between items-center">
+      <p class="text-xs text-oc-gray">OmniCoach AI — front-end prototype</p>
+      <p class="text-xs text-oc-gray">Accounts are simulated in this page. Real authentication arrives with the back-end.</p>
+    </div>
+  </footer>
+</div>
+
+<!-- ══════════════════════════ LOG IN ══════════════════════════ -->
+<div id="screen-login" class="screen">
+  <div class="min-h-screen flex items-center justify-center px-6 py-12">
+    <div class="w-full max-w-md">
+      <button onclick="go('landing')" class="text-sm font-bold text-oc-gray hover:text-oc-dark mb-6">← Back</button>
+      <div class="bg-white rounded-[2rem] p-8 shadow-soft border border-gray-100">
+        <div class="w-12 h-12 bg-gradient-to-br from-oc-orange to-red-500 rounded-xl flex items-center justify-center text-white font-heading font-bold text-xl mb-5">OC</div>
+        <h1 class="font-heading font-extrabold text-3xl mb-1">Welcome back</h1>
+        <p class="text-sm text-oc-gray mb-7">Log in to reach your dashboard.</p>
+
+        <label class="text-xs font-bold text-oc-gray uppercase">Email</label>
+        <input id="login-email" type="text" placeholder="you@example.com" onkeydown="if(event.key==='Enter')doLogin()" class="w-full mt-1 mb-4 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-oc-dark transition-colors">
+
+        <label class="text-xs font-bold text-oc-gray uppercase">Password</label>
+        <input id="login-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" class="w-full mt-1 mb-2 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-oc-dark transition-colors">
+
+        <p id="login-error" class="hidden text-xs font-bold text-red-600 mb-3"></p>
+
+        <button onclick="doLogin()" class="w-full bg-oc-dark text-white font-bold py-3.5 rounded-xl hover:bg-gray-800 transition-colors mt-3">Log in</button>
+        <p class="text-sm text-oc-gray text-center mt-5">No account yet? <button onclick="go('signup')" class="font-bold text-oc-dark hover:underline">Sign up</button></p>
+      </div>
+
+      <div class="bg-white rounded-[2rem] p-6 shadow-soft border border-gray-100 mt-4">
+        <p class="text-xs font-bold text-oc-gray uppercase mb-1">Demo accounts</p>
+        <p class="text-[11px] text-oc-gray mb-4">No back-end yet — pick a seat to preview its interface.</p>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="loginAs('athlete')" class="text-left px-3 py-2.5 rounded-xl border-2 border-gray-200 hover:border-oc-violet transition-colors"><span class="text-sm font-bold">🏅 Athlete + coach</span><br><span class="text-[11px] text-oc-gray">Sarah J.</span></button>
+          <button onclick="loginAs('athlete_solo')" class="text-left px-3 py-2.5 rounded-xl border-2 border-gray-200 hover:border-oc-violet transition-colors"><span class="text-sm font-bold">🏅 Athlete solo</span><br><span class="text-[11px] text-oc-gray">Tomás A. · no coach</span></button>
+          <button onclick="loginAs('coach')" class="text-left px-3 py-2.5 rounded-xl border-2 border-gray-200 hover:border-oc-dark transition-colors"><span class="text-sm font-bold">🧑‍🏫 Coach</span><br><span class="text-[11px] text-oc-gray">Marc L.</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ SIGN UP ══════════════════════════ -->
+<div id="screen-signup" class="screen">
+  <div class="min-h-screen px-6 py-12">
+    <div class="max-w-3xl mx-auto">
+      <button onclick="go('landing')" class="text-sm font-bold text-oc-gray hover:text-oc-dark mb-6">← Back</button>
+
+      <div class="flex items-center gap-2 mb-7">
+        <div id="dot-1" class="step-dot h-1.5 rounded-full bg-oc-dark flex-1"></div>
+        <div id="dot-2" class="step-dot h-1.5 rounded-full bg-gray-200 flex-1"></div>
+        <div id="dot-3" class="step-dot h-1.5 rounded-full bg-gray-200 flex-1"></div>
+      </div>
+
+      <div id="su-1" class="bg-white rounded-[2rem] p-8 shadow-soft border border-gray-100">
+        <h1 class="font-heading font-extrabold text-3xl mb-1">What brings you here?</h1>
+        <p class="text-sm text-oc-gray mb-7">Your seat decides what you see and what you can approve.</p>
+        <div class="grid sm:grid-cols-2 gap-3" id="role-grid"></div>
+        <p class="text-[11px] text-oc-gray mt-5">Prototype: the coach seat is open to anyone here. In production it will require an invitation.</p>
+      </div>
+
+      <div id="su-2" class="hidden bg-white rounded-[2rem] p-8 shadow-soft border border-gray-100">
+        <h1 class="font-heading font-extrabold text-3xl mb-1">Create your account</h1>
+        <p id="su-2-sub" class="text-sm text-oc-gray mb-7"></p>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div><label class="text-xs font-bold text-oc-gray uppercase">Full name</label><input id="f-name" type="text" placeholder="Sarah Jansen" class="w-full mt-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-oc-dark transition-colors"></div>
+          <div><label class="text-xs font-bold text-oc-gray uppercase">Email</label><input id="f-email" type="email" placeholder="you@example.com" class="w-full mt-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-oc-dark transition-colors"></div>
+          <div><label class="text-xs font-bold text-oc-gray uppercase">Password</label><input id="f-pass" type="password" placeholder="••••••••" class="w-full mt-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-oc-dark transition-colors"></div>
+          <div><label class="text-xs font-bold text-oc-gray uppercase">Confirm password</label><input id="f-pass2" type="password" placeholder="••••••••" class="w-full mt-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-oc-dark transition-colors"></div>
+        </div>
+        <p id="su-2-error" class="hidden text-xs font-bold text-red-600 mt-4"></p>
+        <div class="flex gap-3 mt-7">
+          <button onclick="suStep(1)" class="bg-white border-2 border-gray-200 font-bold py-3 px-6 rounded-xl hover:bg-gray-50 transition-colors">Back</button>
+          <button id="su-2-next" onclick="suFromAccount()" class="flex-1 bg-oc-dark text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition-colors">Continue</button>
+        </div>
+      </div>
+
+      <div id="su-3" class="hidden bg-white rounded-[2rem] p-8 shadow-soft border border-gray-100">
+        <h1 class="font-heading font-extrabold text-3xl mb-1">Tell us about your training</h1>
+        <p class="text-sm text-oc-gray mb-7">This is the diagnosis the agents start from: performance + availability + history + load.</p>
+
+        <p class="font-heading font-bold text-lg mb-3">Profile</p>
+        <div class="grid sm:grid-cols-3 gap-4 mb-7">
+          <div><label class="text-xs font-bold text-oc-gray uppercase">Age</label><input id="a-age" type="number" min="14" max="99" placeholder="32" class="w-full mt-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-oc-dark transition-colors"></div>
+          <div><label class="text-xs font-bold text-oc-gray uppercase">Level</label>
+            <select id="a-level" class="w-full mt-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold bg-white focus:border-oc-dark transition-colors">
+              <option value="beginner">Beginner</option><option value="intermediate" selected>Intermediate</option><option value="advanced">Advanced</option>
+            </select></div>
+          <div><label class="text-xs font-bold text-oc-gray uppercase">Training status</label>
+            <select id="a-status" onchange="toggleInactive()" class="w-full mt-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold bg-white focus:border-oc-dark transition-colors">
+              <option value="active" selected>Currently active</option><option value="inactive">Returning after a break</option>
+            </select></div>
+        </div>
+
+        <div id="inactive-box" class="hidden bg-orange-50 border border-orange-100 rounded-xl p-4 mb-7">
+          <div class="flex flex-wrap items-end gap-4">
+            <div><label class="text-xs font-bold text-orange-700 uppercase">Weeks off</label><input id="a-weeksoff" type="number" min="1" max="104" placeholder="8" class="mt-1 w-28 border-2 border-orange-200 rounded-xl px-4 py-2.5 text-sm font-semibold bg-white focus:border-oc-orange transition-colors"></div>
+            <p class="text-xs text-orange-700 font-semibold flex-1 min-w-[16rem]">Your plan will open with a reconditioning block (15–30% of the weeks) before the base phase.</p>
+          </div>
+        </div>
+
+        <p class="font-heading font-bold text-lg mb-3">Goal</p>
+        <div class="grid sm:grid-cols-3 gap-4 mb-7">
+          <div><label class="text-xs font-bold text-oc-gray uppercase">Event type</label>
+            <select id="a-event" onchange="renderDays()" class="w-full mt-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold bg-white focus:border-oc-dark transition-colors">
+              <option value="running">Running only</option><option value="duathlon">Duathlon</option><option value="triathlon" selected>Triathlon</option>
+            </select></div>
+          <div><label class="text-xs font-bold text-oc-gray uppercase">Distance / format</label><input id="a-dist" type="text" placeholder="Olympic" class="w-full mt-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-oc-dark transition-colors"></div>
+          <div><label class="text-xs font-bold text-oc-gray uppercase">Race date</label><input id="a-date" type="date" class="w-full mt-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-oc-dark transition-colors"></div>
+        </div>
+
+        <p class="font-heading font-bold text-lg mb-1">Availability</p>
+        <p class="text-xs text-oc-gray mb-3">Which days can you train, and for which sport?</p>
+        <div id="days-grid" class="grid grid-cols-7 gap-2 mb-7"></div>
+
+        <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-6 mb-7 border border-blue-200">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg">Intervals.icu</span>
+            <h3 class="font-heading font-bold text-lg">Data Connection</h3>
+          </div>
+          <p class="text-sm text-blue-900 mb-4 leading-relaxed">Pulls the athlete's real Fitness / Fatigue / Form and recent sessions. Credentials stay in this page's memory only and link to your OmniCoach account.</p>
+          
+          <div id="intervals-form" class="space-y-3">
+            <div class="grid sm:grid-cols-2 gap-3">
+              <input id="a-intervals-id" type="text" placeholder="Athlete ID (e.g. i296789)" class="border-2 border-blue-300 rounded-xl px-4 py-3 text-sm font-semibold focus:border-blue-500 bg-white transition-colors">
+              <input id="a-intervals-key" type="password" placeholder="API key" class="border-2 border-blue-300 rounded-xl px-4 py-3 text-sm font-semibold focus:border-blue-500 bg-white transition-colors">
+            </div>
+            <p class="text-xs text-blue-800">Find both in Intervals.icu → Settings → Developer. The API key is used with read-only Basic auth.</p>
+            <button type="button" onclick="fetchIntervalsData()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors">Connect</button>
+          </div>
+          
+          <div id="intervals-connected" class="hidden">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                <span class="text-sm font-bold text-blue-900">Connected to Intervals.icu</span>
+              </div>
+              <button type="button" onclick="disconnectIntervals()" class="text-xs font-bold text-blue-600 hover:text-blue-800">Disconnect</button>
+            </div>
+            <div id="intervals-summary" class="mt-3 grid grid-cols-2 gap-2 text-sm"></div>
+          </div>
+        </div>
+
+        <p class="font-heading font-bold text-lg mb-1">Current metrics</p>
+        <p class="text-xs text-oc-gray mb-3">Optional — provide manual metrics or leave blank and the agents will prescribe a test instead.</p>
+        <div class="grid sm:grid-cols-3 gap-4 mb-7">
+          <div><label class="text-xs font-bold text-orange-700 uppercase">🏃 Recent race time</label><input id="a-run" type="text" placeholder="10 km in 47:30" class="w-full mt-1 border-2 border-orange-100 rounded-xl px-4 py-3 text-sm font-semibold focus:border-oc-orange transition-colors"></div>
+          <div><label class="text-xs font-bold text-green-700 uppercase">🚴 FTP (watts)</label><input id="a-ftp" type="number" placeholder="245" class="w-full mt-1 border-2 border-green-100 rounded-xl px-4 py-3 text-sm font-semibold focus:border-oc-green transition-colors"></div>
+          <div><label class="text-xs font-bold text-blue-700 uppercase">🏊 400 m time</label><input id="a-swim" type="text" placeholder="7:10" class="w-full mt-1 border-2 border-blue-100 rounded-xl px-4 py-3 text-sm font-semibold focus:border-oc-blue transition-colors"></div>
+        </div>
+
+        <p class="font-heading font-bold text-lg mb-1">Anything we should know?</p>
+        <p class="text-xs text-oc-gray mb-3">Injuries, constraints, history — write it as you'd tell a coach.</p>
+        <textarea id="a-notes" rows="3" placeholder="Right knee gets sore after long runs. I swam competitively as a teenager. I can't train Thursdays after 6pm." class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-oc-dark transition-colors"></textarea>
+
+        <div class="mt-7 bg-gray-50 border border-gray-200 rounded-xl p-4">
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input id="a-wantcoach" type="checkbox" checked class="mt-0.5 w-4 h-4 accent-violet-600">
+            <span><span class="font-bold text-sm">I want a coach to review my plan</span><br><span class="text-xs text-oc-gray">Your plan stays hidden until your coach approves it. Uncheck to receive it immediately, without human review.</span></span>
+          </label>
+        </div>
+
+        <p id="su-3-error" class="hidden text-xs font-bold text-red-600 mt-4"></p>
+        <div class="flex gap-3 mt-7">
+          <button onclick="suStep(2)" class="bg-white border-2 border-gray-200 font-bold py-3 px-6 rounded-xl hover:bg-gray-50 transition-colors">Back</button>
+          <button onclick="finishSignup()" class="flex-1 bg-oc-dark text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition-colors">Create account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ APP SHELL ══════════════════════════ -->
+<div id="screen-app" class="screen">
+  <div id="pov-bar" class="hidden bg-oc-dark text-white">
+    <div class="max-w-7xl mx-auto px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-xs font-bold flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-oc-orange"></span> <span id="pov-text"></span></p>
+      <button onclick="exitPov()" class="text-xs font-bold bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-lg transition-colors">← Back to admin</button>
+    </div>
+  </div>
+
+  <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-oc-orange to-red-500 rounded-xl flex items-center justify-center text-white font-heading font-bold text-xl shadow-lg shadow-orange-200">OC</div>
+        <span class="font-heading font-extrabold text-2xl tracking-tight">OmniCoach AI</span>
+        <span id="role-badge" class="ml-2 px-3 py-1 text-xs font-bold rounded-full"></span>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="text-right hidden sm:block">
+          <p id="nav-name" class="font-bold text-sm leading-tight"></p>
+          <p id="nav-role" class="text-xs text-oc-gray"></p>
+        </div>
+        <div id="nav-avatar" class="w-10 h-10 rounded-full flex items-center justify-center text-lg"></div>
+        <button onclick="logout()" class="px-4 py-2 rounded-xl font-bold text-sm bg-gray-100 text-oc-gray hover:bg-gray-200 transition-all">Log out</button>
+      </div>
+    </div>
+  </nav>
+  <main class="max-w-7xl mx-auto px-6 py-10"><div id="dashboard"></div></main>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   ROLES — three account types, matching the architecture diagram.
+   "Head coach" is an AI agent, NOT an account. The human is "Coach".
+   ══════════════════════════════════════════════════════════════ */
+const ROLES = {
+  athlete: { label:'Athlete', icon:'🏅', color:'oc-violet', badge:'bg-violet-100 text-violet-700', avatar:'bg-violet-50', blurb:'Follow your plan, log how it went, ask for changes.', signup:true },
+  coach:   { label:'Coach',   icon:'🧑‍🏫', color:'oc-dark',  badge:'bg-gray-800 text-white',        avatar:'bg-gray-100',  blurb:'Review and validate plans before athletes see them.', signup:true },
+  admin:   { label:'Admin',   icon:'⚙️', color:'oc-dark',   badge:'bg-red-100 text-red-700',       avatar:'bg-red-50',    blurb:'Configure the agents.', signup:false },
+};
+
+const AGENTS = {
+  running:  { title:'Running expert',  icon:'🏃', accent:'orange', families:['Easy run','Long run','Tempo run','Cruise intervals','Interval training','Fartlek'], model:'VDOT / Critical Speed', metric:'Recent race time or two time trials', library:186 },
+  cycling:  { title:'Cycling expert',  icon:'🚴', accent:'green',  families:['Endurance','Tempo','Sweet spot','Threshold','VO2max','Brick'], model:'FTP', metric:'Functional Threshold Power (watts)', library:0 },
+  swimming: { title:'Swimming expert', icon:'🏊', accent:'blue',   families:['Technique','Endurance','CSS pace','Sets','Open water'], model:'CSS', metric:'400 m and 1000 m time trials', library:0 },
+};
+
+const LLM_MODELS = ['Mistral Large 3', 'DeepSeek V4', 'Claude Haiku 4.5', 'Claude Sonnet'];
+
+let weights = { running: 34, cycling: 33, swimming: 33 };
+let agentModels = { running:'Mistral Large 3', cycling:'Mistral Large 3', swimming:'Mistral Large 3', coordinator:'Claude Sonnet' };
+let periodization = 'linear';
+
+const DEMO = {
+  athlete:    { name:'Sarah Jansen', email:'sarah@demo.app' },
+  athlete_solo:{ name:'Tomás Alves', email:'tomas@demo.app' },
+  coach:      { name:'Marc Lefèvre', email:'marc@demo.app' },
+  admin:      { name:'Administrator', email:'admin' },
+};
+
+// A self-service athlete: signed up WITHOUT a coach.
+const DEMO_PROFILE_SOLO = {
+  age:'29', level:'intermediate', status:'active', weeksOff:'',
+  event:'running', dist:'10 km', date:'', days:{Mon:[],Tue:['run'],Wed:[],Thu:['run'],Fri:[],Sat:['run'],Sun:[]},
+  run:'10 km in 44:00', ftp:'', swim:'', notes:'Prefer intervals midweek, long run at weekend.', wantCoach:false,
+  intervalsId:'', intervalsKey:'', intervalsData:null,
+};
+
+const DEMO_PROFILE = {
+  age:'34', level:'intermediate', status:'active', weeksOff:'',
+  event:'triathlon', dist:'Olympic', date:'', days:{Mon:['swim'],Tue:['run'],Wed:['bike'],Thu:['run'],Fri:['swim'],Sat:['bike'],Sun:[]},
+  run:'10 km in 47:30', ftp:'245', swim:'7:10', notes:'Right knee gets sore after long runs.', wantCoach:true,
+  intervalsId:'', intervalsKey:'', intervalsData:null,
+};
+
+/* In-memory only: nothing is persisted, nothing is secured. */
+let session = { account:null, viewAs:null };
+let signup = { role:null, name:'', email:'', days:{} };
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $ = id => document.getElementById(id);
+const effectiveRole = () => session.viewAs || session.account.role;
+
+function go(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('screen-' + screen).classList.add('active');
+  window.scrollTo(0, 0);
+  if (screen === 'signup') { suStep(1); renderRoleGrid(); }
+}
+
+/* ─────────────── LOG IN (simulated) ─────────────── */
+function doLogin() {
+  const id = $('login-email').value.trim().toLowerCase();
+  const pass = $('login-pass').value;
+  const err = $('login-error');
+  const fail = m => { err.textContent = m; err.classList.remove('hidden'); };
+  if (!id || !pass) return fail('Enter your email and password.');
+  if (id === 'admin' && pass === 'admin') { err.classList.add('hidden'); loginAs('admin'); return; }
+  const hit = Object.entries(DEMO).find(([k, v]) => v.email === id && k !== 'admin');
+  if (!hit) return fail('No account matches those credentials.');
+  err.classList.add('hidden');
+  loginAs(hit[0]);
+}
+
+function loginAs(role) {
+  const isAthlete = role === 'athlete' || role === 'athlete_solo';
+  const profile = role === 'athlete' ? DEMO_PROFILE : role === 'athlete_solo' ? DEMO_PROFILE_SOLO : null;
+  session = { account:{ role: isAthlete ? 'athlete' : role, ...DEMO[role], profile, fresh:false }, viewAs:null };
+  openApp();
+}
+
+function logout() { session = { account:null, viewAs:null }; $('login-email').value=''; $('login-pass').value=''; go('landing'); }
+
+function enterPov(role) { session.viewAs = role; openApp(); }
+function exitPov() { session.viewAs = null; openApp(); }
+
+/* ─────────────── SIGN UP ─────────────── */
+function renderRoleGrid() {
+  $('role-grid').innerHTML = Object.entries(ROLES).filter(([, r]) => r.signup).map(([key, r]) => `
+    <button onclick="pickRole('${key}')" class="text-left bg-white border-2 border-gray-200 rounded-2xl p-5 hover:border-${r.color} hover:-translate-y-0.5 transition-all">
+      <div class="text-2xl mb-2">${r.icon}</div>
+      <h3 class="font-bold mb-1">${r.label}</h3>
+      <p class="text-xs text-oc-gray leading-relaxed">${r.blurb}</p>
+    </button>`).join('');
+}
+
+function pickRole(role) {
+  signup.role = role;
+  $('su-2-sub').textContent = `Signing up as ${ROLES[role].label.toLowerCase()}.`;
+  $('su-2-next').textContent = role === 'athlete' ? 'Continue' : 'Create account';
+  suStep(2);
+}
+
+function suStep(n) {
+  [1,2,3].forEach(i => $('su-' + i).classList.toggle('hidden', i !== n));
+  [1,2,3].forEach(i => $('dot-' + i).className = 'step-dot h-1.5 rounded-full flex-1 ' + (i <= n ? 'bg-oc-dark' : 'bg-gray-200'));
+  $('dot-3').classList.toggle('opacity-30', signup.role && signup.role !== 'athlete');
+  window.scrollTo(0, 0);
+}
+
+function suFromAccount() {
+  const name = $('f-name').value.trim(), email = $('f-email').value.trim();
+  const p1 = $('f-pass').value, p2 = $('f-pass2').value;
+  const err = $('su-2-error');
+  const fail = m => { err.textContent = m; err.classList.remove('hidden'); };
+  if (!name) return fail('Add your name so your coach knows who you are.');
+  if (!email.includes('@')) return fail('That email address looks incomplete.');
+  if (p1.length < 8) return fail('Use at least 8 characters for your password.');
+  if (p1 !== p2) return fail('The two passwords don\'t match.');
+  err.classList.add('hidden');
+  signup.name = name; signup.email = email;
+  if (signup.role === 'athlete') { renderDays(); suStep(3); } else { finishSignup(); }
+}
+
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const SPORTS_FOR = { running:['run'], duathlon:['run','bike'], triathlon:['run','bike','swim'] };
+const SPORT_META = { run:{icon:'🏃',ring:'border-oc-orange',bg:'bg-orange-50'}, bike:{icon:'🚴',ring:'border-oc-green',bg:'bg-green-50'}, swim:{icon:'🏊',ring:'border-oc-blue',bg:'bg-blue-50'} };
+
+function renderDays() {
+  const sports = SPORTS_FOR[$('a-event').value] || ['run'];
+  Object.keys(signup.days).forEach(d => { signup.days[d] = (signup.days[d] || []).filter(s => sports.includes(s)); });
+  $('days-grid').innerHTML = DAYS.map(d => {
+    const on = signup.days[d] || [];
+    return `<div class="border-2 ${on.length ? 'border-gray-300' : 'border-gray-200'} rounded-xl p-2 text-center">
+      <p class="text-[11px] font-bold text-oc-gray mb-1.5">${d}</p>
+      <div class="flex flex-col gap-1">
+        ${sports.map(s => `<button onclick="toggleDay('${d}','${s}')" title="${s}"
+            class="text-base rounded-lg py-1 border-2 ${on.includes(s) ? SPORT_META[s].ring + ' ' + SPORT_META[s].bg : 'border-transparent bg-gray-50 opacity-40 hover:opacity-70'} transition-all">${SPORT_META[s].icon}</button>`).join('')}
+      </div></div>`;
+  }).join('');
+}
+
+function toggleDay(day, sport) {
+  signup.days[day] = signup.days[day] || [];
+  const i = signup.days[day].indexOf(sport);
+  if (i >= 0) signup.days[day].splice(i, 1); else signup.days[day].push(sport);
+  renderDays();
+}
+
+function toggleInactive() { $('inactive-box').classList.toggle('hidden', $('a-status').value !== 'inactive'); }
+
+function finishSignup() {
+  let profile = null;
+  if (signup.role === 'athlete') {
+    const err = $('su-3-error');
+    const trained = Object.values(signup.days).filter(v => v.length).length;
+    if (!trained) { err.textContent = 'Pick at least one training day — the plan is built around your availability.'; err.classList.remove('hidden'); return; }
+    if (!$('a-date').value) { err.textContent = 'Add your race date so we can count the weeks available.'; err.classList.remove('hidden'); return; }
+    err.classList.add('hidden');
+    profile = {
+      age:$('a-age').value, level:$('a-level').value, status:$('a-status').value,
+      weeksOff:$('a-weeksoff').value, event:$('a-event').value, dist:$('a-dist').value,
+      date:$('a-date').value, days:JSON.parse(JSON.stringify(signup.days)),
+      run:$('a-run').value, ftp:$('a-ftp').value, swim:$('a-swim').value, notes:$('a-notes').value,
+      wantCoach:$('a-wantcoach').checked,
+      intervalsId:$('a-intervals-id').value, intervalsKey:$('a-intervals-key').value,
+      intervalsData:intervalsDataLoaded || null,
+    };
+  }
+  session = { account:{ role:signup.role, name:signup.name, email:signup.email, profile, fresh:true }, viewAs:null };
+  openApp();
+}
+
+/* ─────────────── APP SHELL ─────────────── */
+function openApp() {
+  const role = effectiveRole();
+  const r = ROLES[role];
+  const impersonating = !!session.viewAs;
+
+  $('pov-bar').classList.toggle('hidden', !impersonating);
+  if (impersonating) $('pov-text').textContent = `Previewing the ${r.label} interface — you are logged in as Admin`;
+
+  $('role-badge').className = 'ml-2 px-3 py-1 text-xs font-bold rounded-full ' + r.badge;
+  $('role-badge').textContent = r.label;
+  $('nav-name').textContent = impersonating ? DEMO[role].name : session.account.name;
+  $('nav-role').textContent = impersonating ? 'demo account' : session.account.email;
+  $('nav-avatar').className = 'w-10 h-10 rounded-full flex items-center justify-center text-lg ' + r.avatar;
+  $('nav-avatar').textContent = r.icon;
+
+  $('dashboard').innerHTML =
+      role === 'athlete' ? athleteView()
+    : role === 'coach'   ? coachView()
+    : adminView();
+  go('app');
+  if (role === 'admin') syncWeights();
+}
+
+/* ─────────────── ATHLETE ─────────────── */
+function weeksUntil(date) {
+  if (!date) return null;
+  const diff = new Date(date) - new Date();
+  return Math.max(0, Math.round(diff / (7 * 864e5)));
+}
+
+
+/* ─── Athlete view: the running week the coach validated ─────────────────── */
+function athleteReleasedPlan(plan) {
+  const when = new Date(plan.generatedAt).toLocaleDateString();
+  return `
+  <div class="bg-white rounded-[2rem] p-6 shadow-soft border-2 border-oc-green">
+    <div class="flex items-center justify-between mb-1">
+      <h3 class="font-heading font-bold text-lg flex items-center gap-2">Your running week <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full">COACH-VALIDATED</span></h3>
+      <span class="text-[11px] font-bold text-oc-gray">${plan.sessions.length} sessions</span>
+    </div>
+    <p class="text-xs text-oc-gray mb-4">Approved by your coach on ${when}. Paces are set for you. Tap a session to see the steps.</p>
+    <div class="space-y-2">
+      ${plan.sessions.map((sess, i) => {
+        const d = sess.detail;
+        const summary = d ? sessionSummary(d) : '';
+        return `
+        <div class="border-2 border-gray-100 rounded-xl overflow-hidden">
+          <button onclick="toggleSess(${i})" class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors text-left">
+            <span class="font-heading font-extrabold text-oc-orange w-10 shrink-0">${esc(sess.day)}</span>
+            <div class="flex-grow min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <code class="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-xs font-bold">${esc(sess.code)}</code>
+                <span class="text-[11px] text-oc-gray font-semibold">${summary}</span>
+              </div>
+              <p class="text-[11px] text-oc-gray mt-0.5 leading-relaxed truncate">${esc(sess.rationale)}</p>
+            </div>
+            <span id="chev-${i}" class="text-oc-gray shrink-0 transition-transform">▾</span>
+          </button>
+          <div id="sess-${i}" class="hidden px-3 pb-2 border-t border-gray-100">${d ? stepsHtml(d) : '<p class="text-[11px] text-oc-gray py-3">No detail for this session.</p>'}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <button onclick="alert('Prototype: change requests will be wired to the back-end.')" class="w-full mt-4 bg-white border-2 border-gray-200 font-bold py-2.5 rounded-xl text-xs hover:bg-gray-50 transition-colors">✎ Ask my coach for a change</button>
+  </div>`;
+}
+
+function toggleSess(i) {
+  const body = $(`sess-${i}`), chev = $(`chev-${i}`);
+  const open = !body.classList.contains('hidden');
+  body.classList.toggle('hidden', open);
+  chev.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+
+/* ─── Athlete self-service (no coach): generate own plan via the LLM ─────── */
+let selfPlan = null;      // same shape as a releasedPlans[] entry
+let selfBusy = false;
+let selfError = null;
+
+function athleteCtxFrom(profile) {
+  // Map the athlete's own profile onto the agent's AthleteContext.
+  const days = Object.entries(profile.days || {})
+    .filter(([, v]) => (v || []).includes('run'))
+    .map(([d]) => d);
+  const runningDays = days.length ? days : ['Tue','Thu','Sat'];
+  // A rough phase pick from weeks-to-event; the athlete can't set it directly.
+  const wk = weeksUntil(profile.date);
+  const phase = profile.status === 'inactive' ? 'reconditioning'
+              : wk == null ? 'base'
+              : wk <= 2 ? 'taper' : wk <= 6 ? 'specific' : wk <= 12 ? 'build' : 'base';
+  return {
+    level: profile.level || 'intermediate',
+    goal: `${profile.dist || ''} ${profile.event || 'running'}`.trim(),
+    weeks_to_event: wk || 12,
+    phase,
+    running_days: runningDays,
+    max_session_minutes: 90,
+    easy_pace_min_per_km: 6.0,
+    reference_performance: profile.run || null,
+    notes: profile.notes || null,
+  };
+}
+
+async function generateOwnPlan() {
+  const profile = session.viewAs ? DEMO_PROFILE : (session.account.profile || DEMO_PROFILE);
+  const ctx = athleteCtxFrom(profile);
+  apiBase = ($('self-api-base')?.value || apiBase).trim().replace(/\/$/, '');
+  selfBusy = true; selfError = null; selfPlan = null;
+  $('dashboard').innerHTML = athleteView();
+  const res = await callPropose(ctx, apiBase);
+  if (res.ok) {
+    const det = res.data.detailed_sessions || {};
+    selfPlan = {
+      generatedAt: new Date().toISOString(), provider: res.data.provider, model: res.data.model,
+      sessions: res.data.proposal.sessions.map(x => ({ day:x.day, code:x.workout_code, rationale:x.rationale, detail: det[x.day]||null })),
+    };
+  } else { selfError = res.error; }
+  selfBusy = false;
+  $('dashboard').innerHTML = athleteView();
+}
+
+function athleteSelfService(profile) {
+  if (selfBusy) {
+    return `<div class="bg-white rounded-[2rem] p-6 shadow-soft border-2 border-oc-violet">
+      <div class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">
+        <p class="text-sm font-bold text-oc-gray">Your agent is building your week…</p>
+        <p class="text-xs text-oc-gray mt-1">A local model can take 10–60 s on the first run.</p>
+      </div></div>`;
+  }
+  if (selfPlan) {
+    const when = new Date(selfPlan.generatedAt).toLocaleDateString();
+    return `<div class="bg-white rounded-[2rem] p-6 shadow-soft border-2 border-oc-violet">
+      <div class="flex items-center justify-between mb-1">
+        <h3 class="font-heading font-bold text-lg flex items-center gap-2">Your running week <span class="px-2 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-bold rounded-full">SELF-SERVICE</span></h3>
+        <span class="text-[11px] font-bold text-oc-gray">${esc(selfPlan.provider)} / ${esc(selfPlan.model)}</span>
+      </div>
+      <p class="text-xs text-oc-gray mb-4">You generated this yourself on ${when} — no coach review. Paces are set for you.</p>
+      <div class="space-y-3">
+        ${selfPlan.sessions.map(sess => sessionCard(sess.day, sess, {})).join('')}
+      </div>
+      <button onclick="generateOwnPlan()" class="w-full mt-4 bg-white border-2 border-gray-200 font-bold py-2.5 rounded-xl text-xs hover:bg-gray-50 transition-colors">↻ Regenerate my week</button>
+    </div>`;
+  }
+  const ctx = athleteCtxFrom(profile);
+  return `<div class="bg-white rounded-[2rem] p-6 shadow-soft border-2 border-dashed border-oc-violet">
+    <div class="flex items-start gap-4 mb-4">
+      <div class="text-3xl">🤖</div>
+      <div>
+        <h3 class="font-heading font-bold text-lg mb-1">Generate your running week</h3>
+        <p class="text-sm text-oc-gray leading-relaxed">You signed up without a coach, so you can ask the running agent directly. It plans one session per running day from your profile: <b>${esc(ctx.phase)}</b> phase, <b>${ctx.running_days.join(', ')}</b>.</p>
+      </div>
+    </div>
+    <div class="flex gap-2 mb-3">
+      <input id="self-api-base" type="text" value="${esc(apiBase)}" placeholder="http://localhost:8000"
+             class="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-xs font-mono font-semibold focus:border-oc-violet transition-colors">
+    </div>
+    ${selfError ? `<div class="border-2 border-red-200 bg-red-50 rounded-xl p-3 mb-3">
+      <p class="text-xs font-bold text-red-700 mb-1">${esc(selfError.title)}</p>
+      <p class="text-[11px] text-red-700 leading-relaxed">${esc(selfError.detail)}</p></div>` : ''}
+    <button onclick="generateOwnPlan()" class="w-full bg-oc-violet text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-violet-200 hover:-translate-y-0.5 transition-transform">⚡ Generate my week</button>
+  </div>`;
+}
+
+function athleteView() {
+  const p = session.viewAs ? DEMO_PROFILE : (session.account.profile || DEMO_PROFILE);
+  const fresh = !session.viewAs && session.account.fresh;
+  const weeks = weeksUntil(p.date);
+  const goal = `${p.dist || ''} ${p.event}`.trim();
+  const inactive = p.status === 'inactive';
+  const wantCoach = p.wantCoach !== false;
+
+  const phases = inactive
+    ? [['Reconditioning',22,'bg-oc-violet'],['Base',30,'bg-oc-blue'],['Build',25,'bg-oc-green'],['Specific',13,'bg-oc-orange'],['Taper',10,'bg-gray-400']]
+    : [['Base',40,'bg-oc-blue'],['Build',30,'bg-oc-green'],['Specific',18,'bg-oc-orange'],['Taper',12,'bg-gray-400']];
+
+  const week = [
+    ['Mon','Recovery / technique','🧘','bg-gray-50'],
+    ['Tue','Key session 1','⭐','bg-orange-50'],
+    ['Wed','Aerobic complementary','🚴','bg-green-50'],
+    ['Thu','Key session 2','⭐','bg-orange-50'],
+    ['Fri','Easy / technique','🏊','bg-blue-50'],
+    ['Sat','Key session 3 (long)','⭐','bg-orange-50'],
+    ['Sun','Complementary or rest','☀️','bg-gray-50'],
+  ];
+
+  const buildMsg = wantCoach
+    ? 'The agents are drafting your weeks. Your coach reviews the plan before it reaches you — you will be notified once it is approved.'
+    : 'The agents are drafting your weeks. You chose to skip human review, so it will appear here as soon as it is ready.';
+
+  return `
+  <div class="flex flex-wrap items-end justify-between gap-4 mb-8">
+    <div>
+      <h1 class="font-heading text-3xl font-extrabold mb-1">${fresh ? 'Welcome, ' + esc((session.account.name || '').split(' ')[0]) + '.' : 'Your plan'}</h1>
+      <p class="text-oc-gray font-medium">Goal: ${esc(goal)}${weeks !== null ? ` · ${weeks} weeks to go` : ''}</p>
+    </div>
+    <button onclick="alert('Prototype: change requests will be wired to the back-end.')" class="bg-white border-2 border-gray-200 font-bold py-2.5 px-5 rounded-xl hover:bg-gray-50 transition-colors text-sm">✎ Request a change</button>
+  </div>
+
+  ${fresh && wantCoach ? `
+  <div class="bg-white rounded-[2rem] p-6 shadow-soft border-2 border-oc-violet mb-6">
+    <div class="flex items-start gap-4">
+      <div class="text-3xl">⏳</div>
+      <div class="flex-1">
+        <h3 class="font-heading font-bold text-lg mb-1">Your plan is being built</h3>
+        <p class="text-sm text-oc-gray leading-relaxed mb-3">${buildMsg}</p>
+        <div class="flex flex-wrap gap-2">
+          <span class="px-3 py-1.5 bg-gray-100 text-oc-gray text-xs font-bold rounded-lg">1. Agents drafting</span>
+          ${wantCoach ? `<span class="px-3 py-1.5 bg-violet-50 text-violet-700 text-xs font-bold rounded-lg border border-violet-100">2. Waiting for coach approval</span>` : ''}
+          <span class="px-3 py-1.5 bg-gray-100 text-oc-gray text-xs font-bold rounded-lg">${wantCoach ? '3.' : '2.'} Released to you</span>
+        </div>
+      </div>
+    </div>
+  </div>` : ''}
+
+  <div class="grid lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-6">
+      <div class="bg-white rounded-[2rem] p-6 shadow-soft border border-gray-100">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-heading font-bold text-lg">Your macrocycle</h3>
+          <span class="text-xs font-bold text-oc-gray">${inactive ? 'Return after inactivity' : 'Active athlete'}</span>
+        </div>
+        <div class="flex gap-1 h-4 rounded-full overflow-hidden mb-3">
+          ${phases.map(([, w, c]) => `<div class="${c}" style="width:${w}%"></div>`).join('')}
+        </div>
+        <div class="flex flex-wrap gap-x-5 gap-y-1">
+          ${phases.map(([n, w, c]) => `<span class="flex items-center gap-1.5 text-[11px] font-bold text-oc-gray"><span class="w-2.5 h-2.5 rounded-full ${c}"></span>${n} ${w}%</span>`).join('')}
+        </div>
+        ${inactive ? `<p class="text-xs text-orange-700 font-semibold bg-orange-50 border border-orange-100 rounded-lg px-3 py-2 mt-4">Reconditioning added first: ${esc(p.weeksOff || '?')} weeks off declared.</p>` : ''}
+      </div>
+
+      ${wantCoach
+        ? (releasedPlans['sarah'] ? athleteReleasedPlan(releasedPlans['sarah']) : `
+          <div class="bg-white rounded-[2rem] p-6 shadow-soft border border-gray-100">
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="font-heading font-bold text-lg">This week</h3>
+              <span class="text-xs font-bold text-oc-gray">Microcycle · distribution of stimuli</span>
+            </div>
+            <p class="text-xs text-oc-gray mb-5">No running plan released yet — your coach validates it first. (Demo: log in as Coach, generate a week for Sarah J., and validate.)</p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+              ${week.map(([d, label, icon, bg]) => `
+                <div class="border-2 border-gray-100 rounded-xl p-3 text-center">
+                  <p class="text-[11px] font-bold text-oc-gray mb-2">${d}</p>
+                  <div class="w-9 h-9 mx-auto rounded-full ${bg} flex items-center justify-center text-base mb-2">${icon}</div>
+                  <p class="text-[10px] font-semibold leading-tight">${label}</p>
+                </div>`).join('')}
+            </div>
+          </div>`)
+        : athleteSelfService(p)}
+    </div>
+
+    <div class="space-y-6">
+      <div class="bg-white rounded-[2rem] p-6 shadow-soft border border-gray-100">
+        <h3 class="font-heading font-bold text-lg mb-1">Who builds your plan</h3>
+        <p class="text-xs text-oc-gray mb-4">Three AI specialists, one human.</p>
+        <div class="space-y-3">
+          <div class="flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-orange-50 flex items-center justify-center">🏃</div><div><p class="font-bold text-sm leading-tight">Running expert</p><p class="text-[11px] text-oc-gray">AI agent</p></div></div>
+          <div class="flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-green-50 flex items-center justify-center">🚴</div><div><p class="font-bold text-sm leading-tight">Cycling expert</p><p class="text-[11px] text-oc-gray">AI agent</p></div></div>
+          <div class="flex items-center gap-3"><div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center">🏊</div><div><p class="font-bold text-sm leading-tight">Swimming expert</p><p class="text-[11px] text-oc-gray">AI agent</p></div></div>
+          <div class="flex items-center gap-3 pt-3 border-t border-gray-100"><div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">🧑‍🏫</div><div><p class="font-bold text-sm leading-tight">${wantCoach ? 'Marc Lefèvre' : 'No coach'}</p><p class="text-[11px] text-oc-gray">${wantCoach ? 'Coach · validates your plan' : 'Self-service — plans are not reviewed'}</p></div></div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-[2rem] p-6 shadow-soft border border-gray-100">
+        <h3 class="font-heading font-bold text-lg mb-4">Your diagnosis</h3>
+        <dl class="space-y-2.5 text-sm">
+          <div class="flex justify-between gap-3"><dt class="text-oc-gray">Level</dt><dd class="font-bold capitalize">${esc(p.level)}</dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-oc-gray">Training days</dt><dd class="font-bold">${Object.values(p.days).filter(v => v.length).length} / week</dd></div>
+          ${p.run ? `<div class="flex justify-between gap-3"><dt class="text-oc-gray">🏃 Reference</dt><dd class="font-bold">${esc(p.run)}</dd></div>` : ''}
+          ${p.ftp ? `<div class="flex justify-between gap-3"><dt class="text-oc-gray">🚴 FTP</dt><dd class="font-bold">${esc(p.ftp)} W</dd></div>` : ''}
+          ${p.swim ? `<div class="flex justify-between gap-3"><dt class="text-oc-gray">🏊 400 m</dt><dd class="font-bold">${esc(p.swim)}</dd></div>` : ''}
+        </dl>
+        ${p.notes ? `<p class="text-xs text-oc-gray italic bg-gray-50 border border-gray-100 rounded-lg p-3 mt-4">"${esc(p.notes)}"</p>` : ''}
+      </div>
+
+      ${p.intervalsData ? `
+      <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-[2rem] p-6 shadow-soft border border-blue-200">
+        <div class="flex items-center justify-between gap-2 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 bg-blue-600 text-white text-[10px] font-bold rounded">Intervals.icu</span>
+            <h3 class="font-heading font-bold text-lg text-blue-900">Live Data</h3>
+          </div>
+          ${p.intervalsId ? `<span class="px-3 py-1.5 bg-blue-200 text-blue-900 text-xs font-bold rounded-lg">ID: ${esc(p.intervalsId)}</span>` : ''}
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          ${p.intervalsData.current_fitness !== null ? `<div class="bg-white rounded-xl p-3 shadow-sm"><p class="text-xs font-bold text-blue-700">💪 Fitness</p><p class="text-2xl font-bold text-blue-900">${p.intervalsData.current_fitness}</p></div>` : ''}
+          ${p.intervalsData.current_fatigue !== null ? `<div class="bg-white rounded-xl p-3 shadow-sm"><p class="text-xs font-bold text-blue-700">😴 Fatigue</p><p class="text-2xl font-bold text-blue-900">${p.intervalsData.current_fatigue}</p></div>` : ''}
+          ${p.intervalsData.current_form !== null ? `<div class="bg-white rounded-xl p-3 shadow-sm"><p class="text-xs font-bold text-blue-700">⚡ Form</p><p class="text-2xl font-bold text-blue-900">${p.intervalsData.current_form}</p></div>` : ''}
+          ${p.intervalsData.weight ? `<div class="bg-white rounded-xl p-3 shadow-sm"><p class="text-xs font-bold text-blue-700">⚖️ Weight</p><p class="text-2xl font-bold text-blue-900">${p.intervalsData.weight}<span class="text-sm"> kg</span></p></div>` : ''}
+        </div>
+        <p class="text-xs text-blue-800 mt-3">✓ Data synced from Intervals.icu and linked to your OmniCoach account.</p>
+      </div>` : ''}
+    </div>
+  </div>`;
+}
+
+/* ─────────────── COACH ─────────────── */
+const COACH_ATHLETES = [
+  { id:'lucas', name:'Lucas Dias', goal:'Ironman 70.3', emoji:'👋', status:'pending',
+    ctx:{ level:'beginner', goal:'Ironman 70.3', weeks_to_event:24, phase:'base',
+          running_days:['Tue','Thu'], max_session_minutes:60, easy_pace_min_per_km:6.5,
+          reference_performance:null, notes:'Complete beginner on the bike, club swimming background.' },
+    intervalsData:{ athleteId:'i296789', name:'Lucas Dias', current_fitness:45, current_fatigue:68, current_form:-23, weight:78 } },
+  { id:'sarah', name:'Sarah Jansen', goal:'Gran Fondo', emoji:'🚴‍♀️', status:'active',
+    ctx:{ level:'intermediate', goal:'Gran Fondo', weeks_to_event:12, phase:'build',
+          running_days:['Tue','Thu','Sat'], max_session_minutes:90, easy_pace_min_per_km:6.0,
+          reference_performance:'10 km in 47:30', notes:'Right knee gets sore after long runs.' },
+    intervalsData:{ athleteId:'i412856', name:'Sarah Jansen', current_fitness:62, current_fatigue:42, current_form:20, weight:65 } },
+  { id:'alex', name:'Alexandre Mota', goal:'Marathon', emoji:'🏃‍♂️', status:'review',
+    ctx:{ level:'advanced', goal:'Marathon', weeks_to_event:6, phase:'specific',
+          running_days:['Mon','Wed','Fri','Sun'], max_session_minutes:150, easy_pace_min_per_km:4.8,
+          reference_performance:'Half marathon in 1:22:00', notes:'Targeting a sub-3 marathon.' },
+    intervalsData:{ athleteId:'i528941', name:'Alexandre Mota', current_fitness:78, current_fatigue:55, current_form:23, weight:71 } },
+  { id:'ines', name:'Inês Carvalho', goal:'Olympic tri', emoji:'🏊‍♀️', status:'active',
+    ctx:{ level:'intermediate', goal:'Olympic triathlon', weeks_to_event:2, phase:'taper',
+          running_days:['Wed','Sat'], max_session_minutes:45, easy_pace_min_per_km:5.5,
+          reference_performance:'5 km in 22:10', notes:'Race in two weeks, feeling flat.' },
+    intervalsData:{ athleteId:'i673421', name:'Inês Carvalho', current_fitness:71, current_fatigue:38, current_form:33, weight:63 } },
+];
+
+/* ─── Live API ────────────────────────────────────────────────────────────
+   The back-end runs on the coach's machine. Nothing here is stored.        */
+let apiBase = 'http://localhost:8000';
+let apiHealth = null;
+let apiBusy = false;
+let lastResult = null;
+let lastError = null;
+let selectedAthlete = 'sarah';
+// When the coach validates, the plan is stored per-athlete here and appears in
+// the athlete view. In-memory only — the real store is the back-end (next step).
+let releasedPlans = {};   // athleteId -> { generatedAt, provider, model, sessions:[{day,code,rationale,detail}] }
+
+/* When a proposal is on screen, the coach can edit individual days before
+   validating. We keep an editable copy keyed by day so swap/regen mutate it. */
+let editableProposal = null;   // { provider, model, candidates_considered, byDay:{ day:{code,rationale,detail} } }
+let swapOpenDay = null;        // which day's swap dropdown is open
+let editValuesOpenDay = null;  // which day's step editor is open
+let swapOptions = null;        // cached alternatives for that day
+let editBusyDay = null;        // day currently regenerating
+
+/* Generic proposal call — used by BOTH the coach panel and athlete self-service.
+   Returns {ok, data, error}. Never throws. */
+async function callPropose(ctx, base) {
+  try {
+    const r = await fetch(base + '/agents/running/propose', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ctx),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      const detail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+      return { ok:false, error:{
+        title: r.status === 502 ? 'The model could not be reached'
+             : r.status === 503 ? 'The workout library is not loaded'
+             : r.status === 422 ? 'The request does not fit the library'
+             : `Back-end returned ${r.status}`, detail } };
+    }
+    return { ok:true, data };
+  } catch (e) {
+    return { ok:false, error:{
+      title: 'Cannot reach the back-end',
+      detail: `No response from ${base}. Is uvicorn running? If this page is open inside a sandboxed preview, localhost is blocked — download the file and open it in your browser.` } };
+  }
+}
+
+/* Build the editable proposal structure from a /propose response. */
+function toEditable(data) {
+  const byDay = {};
+  const det = data.detailed_sessions || {};
+  data.proposal.sessions.forEach(sess => {
+    byDay[sess.day] = { code: sess.workout_code, rationale: sess.rationale, detail: det[sess.day] || null };
+  });
+  return { provider:data.provider, model:data.model, candidates_considered:data.candidates_considered,
+           warnings:data.warnings||[], days:data.proposal.sessions.map(s=>s.day), byDay };
+}
+
+function currentCtxFor(a) {
+  return {
+    level:a.ctx.level, goal:a.ctx.goal,
+    weeks_to_event:Number($('q-weeks')?.value || a.ctx.weeks_to_event),
+    phase:$('q-phase')?.value || a.ctx.phase,
+    running_days:editableProposal ? editableProposal.days : a.ctx.running_days,
+    max_session_minutes:Number($('q-max')?.value || a.ctx.max_session_minutes),
+    easy_pace_min_per_km:Number($('q-pace')?.value || a.ctx.easy_pace_min_per_km),
+    reference_performance:a.ctx.reference_performance,
+    notes:$('q-notes')?.value?.trim() || a.ctx.notes || null,
+  };
+}
+
+/* ── Manual swap ─────────────────────────────────────────────────────────*/
+async function openSwap(day) {
+  if (swapOpenDay === day) { swapOpenDay = null; swapOptions = null; $('dashboard').innerHTML = coachView(); return; }
+  const a = COACH_ATHLETES.find(x => x.id === selectedAthlete);
+  const cur = editableProposal.byDay[day];
+  swapOpenDay = day; swapOptions = 'loading';
+  $('dashboard').innerHTML = coachView();
+  const r = await fetch(apiBase + '/agents/running/alternatives', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ context: currentCtxFor(a), day, current_code: cur.code }),
+  }).then(x=>x.json()).catch(()=>null);
+  swapOptions = (r && r.alternatives) ? r.alternatives : [];
+  $('dashboard').innerHTML = coachView();
+}
+
+function chooseSwap(day, code) {
+  const opt = (swapOptions || []).find(o => o.code === code);
+  if (opt) { editableProposal.byDay[day] = { code: opt.code, rationale: 'Manually selected by the coach.', detail: opt.detail }; editableProposal._edited = true; }
+  swapOpenDay = null; swapOptions = null;
+  $('dashboard').innerHTML = coachView();
+}
+
+/* ── Agent regeneration of one day ───────────────────────────────────────*/
+async function regenSession(day) {
+  const a = COACH_ATHLETES.find(x => x.id === selectedAthlete);
+  const cur = editableProposal.byDay[day];
+  editBusyDay = day; swapOpenDay = null;
+  $('dashboard').innerHTML = coachView();
+  const r = await fetch(apiBase + '/agents/running/regenerate-session', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ context: currentCtxFor(a), day, current_code: cur.code }),
+  }).then(x=>x.json()).catch(()=>null);
+  if (r && r.session) {
+    editableProposal.byDay[day] = { code:r.session.workout_code, rationale:r.session.rationale, detail:r.detail }; editableProposal._edited = true;
+  }
+  editBusyDay = null;
+  $('dashboard').innerHTML = coachView();
+}
+const ST = {
+  pending:{ label:'Pending validation', cls:'bg-blue-100 text-blue-700' },
+  active: { label:'On track',           cls:'bg-green-100 text-green-700' },
+  review: { label:'Change requested',   cls:'bg-orange-100 text-orange-700' },
+};
+
+function coachView() {
+  const pending = COACH_ATHLETES.filter(a => a.status === 'pending').length;
+  const review = COACH_ATHLETES.filter(a => a.status === 'review').length;
+  return `
+  <div class="flex flex-wrap items-end justify-between gap-4 mb-8">
+    <div>
+      <h1 class="font-heading text-3xl font-extrabold mb-1">Coach dashboard</h1>
+      <p class="text-oc-gray font-medium">Nothing reaches an athlete until you approve it.</p>
+    </div>
+    <button onclick="alert('Prototype: athlete management will be wired to the back-end.')" class="bg-oc-dark text-white font-bold py-2.5 px-5 rounded-xl hover:bg-gray-800 transition-colors text-sm">+ Add athlete</button>
+  </div>
+
+  <div class="grid sm:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-oc-blue"><p class="text-xs font-bold text-oc-gray uppercase mb-1">Awaiting your approval</p><p class="font-heading text-4xl font-extrabold text-oc-blue">${pending}</p></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-oc-orange"><p class="text-xs font-bold text-oc-gray uppercase mb-1">Change requests</p><p class="font-heading text-4xl font-extrabold text-oc-orange">${review}</p></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border-t-4 border-oc-green"><p class="text-xs font-bold text-oc-gray uppercase mb-1">Athletes</p><p class="font-heading text-4xl font-extrabold text-oc-green">${COACH_ATHLETES.length}</p></div>
+  </div>
+
+  <div class="grid lg:grid-cols-5 gap-6">
+    <div class="lg:col-span-2 bg-white rounded-[2rem] p-6 shadow-soft border border-gray-100">
+      <h3 class="font-heading font-bold text-xl mb-5">Your athletes</h3>
+      <div class="space-y-3">
+        ${COACH_ATHLETES.map(a => `
+          <div onclick="pickAthlete('${a.id}')" class="border-2 ${a.id === selectedAthlete ? 'border-oc-dark' : 'border-gray-100 hover:border-gray-300'} rounded-xl p-4 flex flex-wrap items-center gap-3 cursor-pointer transition-colors">
+            <div class="w-11 h-11 rounded-full bg-gray-50 flex items-center justify-center text-xl shrink-0">${a.emoji}</div>
+            <div class="flex-grow min-w-0">
+              <h4 class="font-bold text-sm leading-tight">${esc(a.name)}</h4>
+              <p class="text-xs text-oc-gray truncate">${esc(a.goal)} · ${a.ctx.phase} · ${a.ctx.weeks_to_event} wks</p>
+            </div>
+            <span class="px-2.5 py-1 text-[10px] font-bold rounded-full ${ST[a.status].cls}">${ST[a.status].label}</span>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    ${apiPanel()}
+  </div>`;
+}
+
+/* ─── The live API panel — this is where the coach talks to the agent ──── */
+function apiPanel() {
+  const a = COACH_ATHLETES.find(x => x.id === selectedAthlete);
+  const c = a.ctx;
+  const dot = apiHealth === null ? 'bg-gray-300'
+            : apiHealth.status === 'ok' ? 'bg-oc-green' : 'bg-oc-red';
+  const healthText = apiHealth === null
+    ? 'Not connected'
+    : apiHealth.status === 'ok'
+      ? `Connected · ${esc(apiHealth.provider)} / ${esc(apiHealth.model)}`
+      : `Unreachable`;
+
+  return `
+  <div class="lg:col-span-3 bg-white rounded-[2rem] p-6 shadow-soft border border-gray-100">
+    <div class="flex flex-wrap items-start justify-between gap-3 mb-1">
+      <h3 class="font-heading font-bold text-xl">Ask the running agent</h3>
+      <span class="flex items-center gap-2 text-[11px] font-bold text-oc-gray"><span class="w-2 h-2 rounded-full ${dot}"></span>${healthText}</span>
+    </div>
+    <p class="text-xs text-oc-gray mb-5">Live call to your back-end. The agent selects sessions from the 186-workout library — it never invents one.</p>
+
+    <div class="flex gap-2 mb-5">
+      <input id="api-base" type="text" value="${esc(apiBase)}" placeholder="http://localhost:8000"
+             class="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-xs font-mono font-semibold focus:border-oc-dark transition-colors">
+      <button onclick="checkHealth()" class="bg-white border-2 border-gray-200 font-bold py-2 px-4 rounded-xl text-xs hover:bg-gray-50 transition-colors">Connect</button>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div>
+        <label class="text-[11px] font-bold text-oc-gray uppercase">Phase</label>
+        <select id="q-phase" class="w-full mt-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold bg-white focus:border-oc-dark transition-colors">
+          ${['reconditioning','base','build','specific','taper'].map(p =>
+            `<option value="${p}" ${c.phase === p ? 'selected' : ''}>${p}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-oc-gray uppercase">Max session (min)</label>
+        <input id="q-max" type="number" min="20" max="300" value="${c.max_session_minutes}"
+               class="w-full mt-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:border-oc-dark transition-colors">
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-oc-gray uppercase">Weeks to event</label>
+        <input id="q-weeks" type="number" min="1" max="104" value="${c.weeks_to_event}"
+               class="w-full mt-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:border-oc-dark transition-colors">
+      </div>
+      <div>
+        <label class="text-[11px] font-bold text-oc-gray uppercase">Easy pace (min/km)</label>
+        <input id="q-pace" type="number" step="0.1" min="3" max="12" value="${c.easy_pace_min_per_km}"
+               class="w-full mt-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:border-oc-dark transition-colors">
+      </div>
+    </div>
+
+    <label class="text-[11px] font-bold text-oc-gray uppercase">Running days</label>
+    <div id="q-days" class="grid grid-cols-7 gap-1.5 mt-1 mb-4">
+      ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => `
+        <button onclick="toggleQDay('${d}')" data-day="${d}"
+          class="qday text-[11px] font-bold rounded-lg py-2 border-2 transition-all ${c.running_days.includes(d)
+            ? 'border-oc-dark bg-oc-dark text-white' : 'border-gray-200 bg-white text-oc-gray hover:bg-gray-50'}">${d}</button>`).join('')}
+    </div>
+
+    <label class="text-[11px] font-bold text-oc-gray uppercase">Notes sent to the agent</label>
+    <textarea id="q-notes" rows="2" class="w-full mt-1 mb-4 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:border-oc-dark transition-colors">${esc(c.notes || '')}</textarea>
+
+    ${a.intervalsData ? `
+    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 mb-4 border border-blue-200">
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2 flex-1 min-w-0">
+          <span class="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded shrink-0">Intervals.icu</span>
+          <p class="text-xs font-bold text-blue-900 truncate">${esc(a.intervalsData.name)}</p>
+        </div>
+        ${a.intervalsData.athleteId ? `<span class="px-2.5 py-1 bg-blue-200 text-blue-900 text-[10px] font-bold rounded shrink-0">ID: ${esc(a.intervalsData.athleteId)}</span>` : ''}
+      </div>
+      <div class="grid grid-cols-4 gap-2 text-xs">
+        ${a.intervalsData.current_fitness !== null ? `<div class="bg-white/80 rounded-lg p-2"><span class="text-blue-700 font-bold block">💪</span><span class="text-blue-900 font-bold">${a.intervalsData.current_fitness}</span></div>` : ''}
+        ${a.intervalsData.current_fatigue !== null ? `<div class="bg-white/80 rounded-lg p-2"><span class="text-blue-700 font-bold block">😴</span><span class="text-blue-900 font-bold">${a.intervalsData.current_fatigue}</span></div>` : ''}
+        ${a.intervalsData.current_form !== null ? `<div class="bg-white/80 rounded-lg p-2"><span class="text-blue-700 font-bold block">⚡</span><span class="text-blue-900 font-bold">${a.intervalsData.current_form}</span></div>` : ''}
+        ${a.intervalsData.weight ? `<div class="bg-white/80 rounded-lg p-2"><span class="text-blue-700 font-bold block">⚖️</span><span class="text-blue-900 font-bold">${a.intervalsData.weight}kg</span></div>` : ''}
+      </div>
+    </div>` : ''}
+
+    <button onclick="generateWeek()" ${apiBusy ? 'disabled' : ''}
+      class="w-full bg-oc-dark text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition-colors ${apiBusy ? 'opacity-50' : ''}">
+      ${apiBusy ? 'Agent is thinking…' : '⚡ Generate the running week'}
+    </button>
+
+    <div id="api-result" class="mt-5">${resultBlock()}</div>
+  </div>`;
+}
+
+
+/* ─── Session detail rendering (shared by coach preview & athlete view) ──── */
+function fmtDur(sec) {
+  if (!sec) return null;
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return s ? `${m}:${String(s).padStart(2,'0')}` : `${m} min`;
+}
+function fmtKm(m) { return m ? (m/1000).toFixed(1) + ' km' : null; }
+
+const ZONE_COLOR = {
+  Z1:'bg-blue-100 text-blue-700', Z2:'bg-green-100 text-green-700',
+  Z3:'bg-orange-100 text-orange-700', Z4:'bg-red-100 text-red-700',
+  Z5:'bg-purple-100 text-purple-700',
+};
+const ROLE_ICON = { 'Warm-up':'🔥', 'Work':'⚡', 'Recovery':'💨', 'Cool-down':'🧊', 'Rest':'⏸️' };
+
+function sessionSummary(detail) {
+  if (!detail) return '';
+  const km = fmtKm(detail.total_distance_m || detail.est_total_distance_m);
+  const dur = fmtDur(detail.total_duration_sec || detail.est_total_duration_sec);
+  const bits = [dur && ('⏱ ' + dur), km && ('📏 ' + km)].filter(Boolean);
+  return bits.join(' · ');
+}
+
+const ZONE_BAR = { Z1:'#3b82f6', Z2:'#10b981', Z3:'#f97316', Z4:'#ef4444', Z5:'#7c3aed' };
+
+/* A slim horizontal bar showing how the session's time is split across zones. */
+function zoneBar(detail) {
+  if (!detail || !detail.steps) return '';
+  const segs = detail.steps.map(st => {
+    const sec = st.duration_sec || st.est_duration_sec || 0;
+    return { z: st.zone, sec };
+  }).filter(x => x.sec > 0 && x.z);
+  const total = segs.reduce((a, b) => a + b.sec, 0) || 1;
+  return `<div class="flex h-2 rounded-full overflow-hidden bg-gray-100">
+    ${segs.map(x => `<div style="width:${(x.sec/total*100).toFixed(1)}%;background:${ZONE_BAR[x.z]||'#9ca3af'}"></div>`).join('')}
+  </div>`;
+}
+
+function stepsHtml(detail) {
+  if (!detail || !detail.steps) return '';
+  return `<div class="relative pl-4">
+    <div class="absolute left-[7px] top-1 bottom-1 w-0.5 bg-gray-100"></div>
+    ${detail.steps.map(st => {
+      const dur = fmtDur(st.duration_sec) || (st.distance_m ? st.distance_m + ' m' : null);
+      const est = !st.duration_sec && st.est_duration_sec ? ` (~${fmtDur(st.est_duration_sec)})`
+                : !st.distance_m && st.est_distance_m ? ` (~${(st.est_distance_m/1000).toFixed(1)} km)` : '';
+      const dot = ZONE_BAR[st.zone] || '#9ca3af';
+      return `
+        <div class="relative flex items-center gap-3 py-2">
+          <span class="absolute -left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border-2 border-white shadow" style="background:${dot}"></span>
+          <div class="flex-grow min-w-0 pl-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm">${ROLE_ICON[st.role_label]||'•'}</span>
+              <span class="font-bold text-xs">${esc(st.role_label)}</span>
+              ${st.zone ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${ZONE_COLOR[st.zone]||'bg-gray-100 text-gray-600'}">${st.zone} · ${esc(st.zone_label||'')}</span>` : ''}
+            </div>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-bold text-xs text-oc-dark">${dur||'-'}${est}</p>
+            ${st.target_pace_label ? `<p class="text-[11px] text-oc-orange font-bold">@ ${st.target_pace_label}/km</p>` : '<p class="text-[10px] text-oc-gray">no pace</p>'}
+          </div>
+        </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function formatEditDurValue(step) {
+  const sec = step.duration_sec != null ? step.duration_sec : step.est_duration_sec;
+  return sec != null ? formatInputDur(sec) : '';
+}
+function formatEditKmValue(step) {
+  const m = step.distance_m != null ? step.distance_m : step.est_distance_m;
+  return m != null ? (m/1000).toFixed(2) : '';
+}
+function formatEditPaceValue(step) {
+  return step.target_pace_label || '';
+}
+function formatInputDur(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+function stepsEditor(day, detail) {
+  if (!detail || !detail.steps) return '';
+  return `<div class="space-y-3">
+    <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-[11px] text-oc-gray">
+      <p class="font-bold mb-2">Edit two of the three fields and the third value will update automatically.</p>
+      <ul class="list-disc list-inside space-y-1">
+        <li>Change duration + pace to recalculate distance.</li>
+        <li>Change distance + pace to recalculate duration.</li>
+        <li>Change duration + distance to recalculate pace.</li>
+      </ul>
+    </div>
+    ${detail.steps.map((st, idx) => `
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <p class="text-xs font-bold text-oc-gray uppercase">${esc(st.role_label)}</p>
+            <div class="flex flex-wrap items-center gap-2 mt-1">
+              ${st.zone ? `<span class="px-2 py-1 rounded-full text-[10px] font-bold ${ZONE_COLOR[st.zone]||'bg-gray-100 text-gray-600'}">${st.zone}</span>` : ''}
+              ${st.zone_label ? `<span class="text-[11px] text-oc-gray">${esc(st.zone_label)}</span>` : ''}
+            </div>
+          </div>
+          <div class="text-right text-[11px] text-oc-gray">Step ${idx + 1}</div>
+        </div>
+        <div class="grid sm:grid-cols-3 gap-3">
+          <label class="block text-[11px] font-bold text-oc-gray">
+            Duration
+            <span class="block text-[10px] text-oc-gray mt-1">Change time, distance follows pace.</span>
+            <input onchange="updateStepValue('${day}', ${idx}, 'duration', this.value)"
+                   value="${esc(formatEditDurValue(st))}"
+                   placeholder="mm:ss"
+                   class="mt-1 w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-oc-dark transition-colors" />
+          </label>
+          <label class="block text-[11px] font-bold text-oc-gray">
+            Distance
+            <span class="block text-[10px] text-oc-gray mt-1">Change volume, duration follows pace.</span>
+            <input onchange="updateStepValue('${day}', ${idx}, 'distance', this.value)"
+                   value="${esc(formatEditKmValue(st))}"
+                   placeholder="km"
+                   class="mt-1 w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-oc-dark transition-colors" />
+          </label>
+          <label class="block text-[11px] font-bold text-oc-gray">
+            Pace
+            <span class="block text-[10px] text-oc-gray mt-1">Change speed, other value updates.</span>
+            <input onchange="updateStepValue('${day}', ${idx}, 'pace', this.value)"
+                   value="${esc(formatEditPaceValue(st))}"
+                   placeholder="m:ss"
+                   class="mt-1 w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-oc-dark transition-colors" />
+          </label>
+        </div>
+      </div>`).join('')}
+  </div>`;
+}
+
+function parseDurToSec(value) {
+  if (!value || !value.trim()) return null;
+  const raw = value.trim();
+  const hh = raw.match(/^([0-9]+):([0-9]{1,2})$/);
+  if (hh) {
+    const m = Number(hh[1]); const s = Number(hh[2]);
+    if (!Number.isFinite(m) || !Number.isFinite(s) || s < 0 || s >= 60 || m < 0) return null;
+    return m * 60 + s;
+  }
+  const n = Number(raw.replace(',', '.'));
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.round(n * 60);
+}
+function parseKmToM(value) {
+  if (!value || !value.trim()) return null;
+  const n = Number(value.trim().replace(',', '.'));
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.round(n * 1000);
+}
+function parsePaceToSecPerKm(value) {
+  if (!value || !value.trim()) return null;
+  const raw = value.trim();
+  const hh = raw.match(/^([0-9]+):([0-9]{1,2})$/);
+  if (hh) {
+    const m = Number(hh[1]); const s = Number(hh[2]);
+    if (!Number.isFinite(m) || !Number.isFinite(s) || s < 0 || s >= 60 || m < 0) return null;
+    return m * 60 + s;
+  }
+  const n = Number(raw.replace(',', '.'));
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.round(n * 60);
+}
+function computePaceSecPerKm(durationSec, distanceM) {
+  if (durationSec == null || distanceM == null || distanceM <= 0) return null;
+  return Math.round(durationSec * 1000 / distanceM);
+}
+function computeDistanceM(durationSec, paceSecPerKm) {
+  if (durationSec == null || paceSecPerKm == null || paceSecPerKm <= 0) return null;
+  return Math.round(durationSec * 1000 / paceSecPerKm);
+}
+function computeDurationSec(distanceM, paceSecPerKm) {
+  if (distanceM == null || paceSecPerKm == null || paceSecPerKm <= 0) return null;
+  return Math.round(distanceM * paceSecPerKm / 1000);
+}
+function inferPaceSecPerKm(step) {
+  const explicit = step.target_pace_label ? parsePaceToSecPerKm(step.target_pace_label) : null;
+  if (explicit != null) return explicit;
+  if (step.duration_sec != null && step.distance_m != null && step.distance_m > 0) {
+    return computePaceSecPerKm(step.duration_sec, step.distance_m);
+  }
+  if (step.est_duration_sec != null && step.est_distance_m != null && step.est_distance_m > 0) {
+    return computePaceSecPerKm(step.est_duration_sec, step.est_distance_m);
+  }
+  return null;
+}
+function recomputeTotals(detail) {
+  if (!detail || !detail.steps) return;
+  detail.total_duration_sec = detail.steps.reduce((sum, st) => sum + (st.duration_sec || 0), 0);
+  detail.est_total_duration_sec = detail.steps.reduce((sum, st) => sum + (st.est_duration_sec || 0), 0);
+  detail.total_distance_m = detail.steps.reduce((sum, st) => sum + (st.distance_m || 0), 0);
+  detail.est_total_distance_m = detail.steps.reduce((sum, st) => sum + (st.est_distance_m || 0), 0);
+}
+function updateStepValue(day, stepIndex, field, value) {
+  if (!editableProposal || !editableProposal.byDay || !editableProposal.byDay[day]) return;
+  const detail = editableProposal.byDay[day].detail;
+  if (!detail || !detail.steps || !detail.steps[stepIndex]) return;
+  const step = detail.steps[stepIndex];
+  let duration = step.duration_sec != null ? step.duration_sec : null;
+  let distance = step.distance_m != null ? step.distance_m : null;
+  let pace = step.target_pace_label ? parsePaceToSecPerKm(step.target_pace_label) : null;
+
+  if (field === 'duration') {
+    duration = parseDurToSec(value);
+    step.duration_sec = duration;
+  } else if (field === 'distance') {
+    distance = parseKmToM(value);
+    step.distance_m = distance;
+  } else if (field === 'pace') {
+    const newPace = parsePaceToSecPerKm(value);
+    pace = newPace;
+    step.target_pace_label = value && value.trim() ? value.trim() : null;
+  }
+
+  if (duration != null && distance != null) {
+    pace = computePaceSecPerKm(duration, distance);
+    step.target_pace_label = pace != null ? formatInputDur(pace) : step.target_pace_label;
+  } else if (duration != null && pace != null) {
+    distance = computeDistanceM(duration, pace);
+    step.distance_m = distance;
+  } else if (distance != null && pace != null) {
+    duration = computeDurationSec(distance, pace);
+    step.duration_sec = duration;
+  }
+
+  if (field !== 'duration' && duration == null) {
+    step.duration_sec = null;
+  }
+  if (field !== 'distance' && distance == null) {
+    step.distance_m = null;
+  }
+  if (field !== 'pace' && pace == null) {
+    step.target_pace_label = null;
+  }
+
+  if (pace != null && !step.target_pace_label) {
+    step.target_pace_label = formatInputDur(pace);
+  }
+
+  recomputeTotals(detail);
+  editableProposal.byDay[day]._manuallyEdited = true;
+  editableProposal._edited = true;
+  $('dashboard').innerHTML = coachView();
+}
+function toggleEditValues(day) {
+  if (editValuesOpenDay === day) {
+    editValuesOpenDay = null;
+  } else {
+    editValuesOpenDay = day;
+    swapOpenDay = null;
+  }
+  $('dashboard').innerHTML = coachView();
+}
+
+/* A full session card — used in the coach editor and the athlete plan.
+   `editable` adds the Swap / Regenerate controls. */
+function sessionCard(day, entry, opts = {}) {
+  const d = entry.detail;
+  const editable = opts.editable;
+  const busy = editBusyDay === day;
+  const swapOpen = swapOpenDay === day;
+  const km = fmtKm(d && (d.total_distance_m || d.est_total_distance_m));
+  const dur = fmtDur(d && (d.total_duration_sec || d.est_total_duration_sec));
+  return `
+  <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+    <div class="flex items-center gap-3 p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+      <div class="w-12 h-12 rounded-xl bg-oc-dark text-white flex flex-col items-center justify-center shrink-0 leading-none">
+        <span class="font-heading font-extrabold text-sm">${esc(day)}</span>
+      </div>
+      <div class="flex-grow min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <code class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-lg text-xs font-extrabold">${esc(entry.code)}</code>
+          ${entry._manuallyEdited ? `<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-yellow-100 text-yellow-800">✎ Edited</span>` : ''}
+          ${d ? `<span class="text-[11px] font-bold text-oc-gray">${[dur&&('⏱ '+dur), km&&('📏 '+km)].filter(Boolean).join(' · ')}</span>` : ''}
+        </div>
+        <p class="text-[11px] text-oc-gray mt-1 leading-relaxed line-clamp-2">${esc(entry.rationale)}</p>
+      </div>
+    </div>
+    ${d ? `<div class="px-4 pt-3">${zoneBar(d)}</div><div class="px-4 pb-2">${editValuesOpenDay === day ? stepsEditor(day, d) : stepsHtml(d)}</div>`
+        : '<p class="text-[11px] text-oc-gray p-4">No detail available for this code.</p>'}
+    ${editable ? `
+      <div class="border-t border-gray-100 p-2 flex flex-wrap gap-2 bg-gray-50">
+        <button onclick="openSwap('${day}')" ${busy?'disabled':''} class="flex-1 min-w-[150px] bg-white border-2 border-gray-200 font-bold py-2 rounded-lg text-[11px] hover:bg-gray-50 transition-colors ${swapOpen?'border-oc-dark':''}">↔ Swap workout</button>
+        <button onclick="regenSession('${day}')" ${busy?'disabled':''} class="flex-1 min-w-[150px] bg-white border-2 border-gray-200 font-bold py-2 rounded-lg text-[11px] hover:bg-gray-50 transition-colors">${busy?'Regenerating…':'↻ Ask agent to redo'}</button>
+        <button onclick="toggleEditValues('${day}')" ${busy?'disabled':''} class="flex-1 min-w-[150px] bg-white border-2 border-gray-200 font-bold py-2 rounded-lg text-[11px] hover:bg-gray-50 transition-colors">${editValuesOpenDay === day ? '✕ Close editor' : '✎ Edit values'}</button>
+      </div>
+      ${swapOpen ? swapDropdown(day) : ''}
+    ` : ''}
+  </div>`;
+}
+
+function swapDropdown(day) {
+  if (swapOptions === 'loading') {
+    return `<div class="border-t border-gray-100 p-3 text-center text-[11px] font-bold text-oc-gray bg-white">Loading alternatives…</div>`;
+  }
+  if (!swapOptions || !swapOptions.length) {
+    return `<div class="border-t border-gray-100 p-3 text-center text-[11px] text-oc-gray bg-white">No other workout fits this phase and budget.</div>`;
+  }
+  return `<div class="border-t border-gray-100 p-2 bg-white max-h-56 overflow-y-auto">
+    <p class="text-[10px] font-bold text-oc-gray uppercase px-2 py-1">Pick a replacement</p>
+    ${swapOptions.map(o => {
+      const km = fmtKm(o.detail && (o.detail.total_distance_m || o.detail.est_total_distance_m));
+      const dur = fmtDur(o.detail && (o.detail.total_duration_sec || o.detail.est_total_duration_sec));
+      return `<button onclick="chooseSwap('${day}','${o.code}')" class="w-full text-left px-2 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-colors">
+        <code class="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-[11px] font-bold shrink-0">${esc(o.code)}</code>
+        <span class="text-[11px] text-oc-gray truncate flex-grow">${esc(o.family)}</span>
+        <span class="text-[10px] font-bold text-oc-gray shrink-0">${[dur,km].filter(Boolean).join(' · ')}</span>
+      </button>`;
+    }).join('')}
+  </div>`;
+}
+
+function resultBlock() {
+  if (apiBusy) {
+    return `<div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
+      <p class="text-sm font-bold text-oc-gray">Calling the agent…</p>
+      <p class="text-xs text-oc-gray mt-1">A local model can take 10–60 s on the first run.</p>
+    </div>`;
+  }
+  if (lastError) {
+    return `<div class="border-2 border-red-200 bg-red-50 rounded-xl p-4">
+      <p class="text-sm font-bold text-red-700 mb-1">${esc(lastError.title)}</p>
+      <p class="text-xs text-red-700 leading-relaxed">${esc(lastError.detail)}</p>
+    </div>`;
+  }
+  if (!lastResult) {
+    return `<div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
+      <p class="text-xs text-oc-gray">The agent's proposal will appear here.</p>
+    </div>`;
+  }
+  const ep = editableProposal;
+  const a = COACH_ATHLETES.find(x => x.id === selectedAthlete);
+  const alreadyReleased = releasedPlans[selectedAthlete];
+  const edited = ep._edited;
+  return `
+  <div class="border-2 border-oc-green rounded-2xl p-4 bg-gray-50/50">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+      <p class="text-sm font-bold text-oc-dark">Proposed week · ${ep.days.length} sessions${edited ? ' <span class="text-[10px] text-oc-orange">(edited)</span>' : ''}</p>
+      <span class="text-[10px] font-bold text-oc-gray bg-white border border-gray-200 px-2 py-1 rounded-md">${esc(ep.provider)} / ${esc(ep.model)} · ${ep.candidates_considered} candidates</span>
+    </div>
+    <p class="text-[11px] text-oc-gray mb-3">Paces are computed for ${esc(a.name)} from ${a.ctx.reference_performance ? esc(a.ctx.reference_performance) : 'their profile'}. Swap or regenerate any session before validating.</p>
+    <div class="space-y-3">
+      ${ep.days.map(day => sessionCard(day, ep.byDay[day], { editable: !alreadyReleased })).join('')}
+    </div>
+    ${ep.warnings && ep.warnings.length ? `<div class="mt-3 bg-orange-50 border border-orange-200 rounded-lg p-2">
+      ${ep.warnings.map(w => `<p class="text-[11px] font-bold text-orange-700">⚠ ${esc(w)}</p>`).join('')}
+    </div>` : ''}
+    ${alreadyReleased ? `<div class="mt-4 bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+      <p class="text-xs font-bold text-green-700">✓ Released to ${esc(a.name)} — visible in their athlete view.</p>
+    </div>` : `<div class="flex gap-2 mt-4">
+      <button onclick="releaseToAthlete()" class="flex-1 bg-oc-green text-white font-bold py-3 rounded-xl text-sm shadow-lg shadow-green-200 hover:-translate-y-0.5 transition-transform">✓ Validate &amp; release to ${esc(a.name.split(' ')[0])}</button>
+      <button onclick="generateWeek()" class="bg-white border-2 border-gray-200 font-bold py-3 px-4 rounded-xl text-sm hover:bg-gray-50 transition-colors">↻ New week</button>
+    </div>`}
+  </div>`;
+}
+
+/* Coach validates → store the plan so the athlete view can render it. */
+function releaseToAthlete() {
+  const ep = editableProposal;
+  if (!ep) return;
+  releasedPlans[selectedAthlete] = {
+    generatedAt: new Date().toISOString(),
+    provider: ep.provider, model: ep.model,
+    sessions: ep.days.map(day => ({
+      day, code: ep.byDay[day].code, rationale: ep.byDay[day].rationale, detail: ep.byDay[day].detail,
+    })),
+  };
+  const a = COACH_ATHLETES.find(x => x.id === selectedAthlete);
+  if (a && a.status === 'pending') a.status = 'active';
+  $('dashboard').innerHTML = coachView();
+}
+
+function pickAthlete(id) {
+  selectedAthlete = id;
+  lastResult = null; lastError = null;
+  $('dashboard').innerHTML = coachView();
+}
+
+function toggleQDay(d) {
+  const btn = document.querySelector(`.qday[data-day="${d}"]`);
+  const on = btn.classList.contains('bg-oc-dark');
+  btn.className = 'qday text-[11px] font-bold rounded-lg py-2 border-2 transition-all ' + (on
+    ? 'border-gray-200 bg-white text-oc-gray hover:bg-gray-50'
+    : 'border-oc-dark bg-oc-dark text-white');
+}
+
+function readQDays() {
+  return [...document.querySelectorAll('.qday')]
+    .filter(b => b.classList.contains('bg-oc-dark'))
+    .map(b => b.dataset.day);
+}
+
+async function checkHealth() {
+  apiBase = ($('api-base')?.value || apiBase).trim().replace(/\/$/, '');
+  try {
+    const r = await fetch(apiBase + '/health');
+    apiHealth = await r.json();
+  } catch {
+    apiHealth = { status: 'error' };
+    lastError = {
+      title: 'Cannot reach the back-end',
+      detail: `No response from ${apiBase}. Start it with "uvicorn app.main:app --reload", and make sure this page is opened as a local file — not inside a sandboxed preview, which blocks localhost.`,
+    };
+  }
+  $('dashboard').innerHTML = coachView();
+}
+
+async function generateWeek() {
+  const days = readQDays();
+  if (!days.length) {
+    lastError = { title: 'Pick at least one running day', detail: 'The agent plans one session per available day.' };
+    $('api-result').innerHTML = resultBlock();
+    return;
+  }
+  apiBase = ($('api-base')?.value || apiBase).trim().replace(/\/$/, '');
+  const a = COACH_ATHLETES.find(x => x.id === selectedAthlete);
+  const body = {
+    level: a.ctx.level, goal: a.ctx.goal,
+    weeks_to_event: Number($('q-weeks').value),
+    phase: $('q-phase').value, running_days: days,
+    max_session_minutes: Number($('q-max').value),
+    easy_pace_min_per_km: Number($('q-pace').value),
+    reference_performance: a.ctx.reference_performance,
+    notes: $('q-notes').value.trim() || null,
+  };
+
+  apiBusy = true; lastError = null; lastResult = null; editableProposal = null;
+  swapOpenDay = null; swapOptions = null;
+  $('api-result').innerHTML = resultBlock();
+
+  const res = await callPropose(body, apiBase);
+  if (res.ok) { lastResult = res.data; editableProposal = toEditable(res.data); }
+  else { lastError = res.error; }
+  apiBusy = false;
+  $('dashboard').innerHTML = coachView();
+}
+
+/* ─────────────── ADMIN ─────────────── */
+const BORDER_FOR = { orange:'border-oc-orange', green:'border-oc-green', blue:'border-oc-blue' };
+
+function adminView() {
+  return `
+  <div class="flex flex-wrap items-end justify-between gap-4 mb-8">
+    <div>
+      <h1 class="font-heading text-3xl font-extrabold mb-1">Agent configuration</h1>
+      <p class="text-oc-gray font-medium">The experts are AI agents. This is where their behaviour is set.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <span class="text-xs font-bold text-oc-gray self-center mr-1">Preview as:</span>
+      <button onclick="enterPov('athlete')" class="bg-white border-2 border-gray-200 hover:border-oc-violet font-bold py-2 px-4 rounded-xl text-sm transition-colors">🏅 Athlete</button>
+      <button onclick="enterPov('coach')" class="bg-white border-2 border-gray-200 hover:border-oc-dark font-bold py-2 px-4 rounded-xl text-sm transition-colors">🧑‍🏫 Coach</button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-[2rem] p-6 shadow-soft border border-gray-100 mb-6">
+    <div class="flex flex-wrap items-baseline justify-between gap-3 mb-1">
+      <h3 class="font-heading font-bold text-xl">Priority weights</h3>
+      <code id="w-vector" class="text-xs font-bold bg-gray-100 px-3 py-1.5 rounded-lg"></code>
+    </div>
+    <p class="text-xs text-oc-gray mb-6">The explicit bias each expert carries when the head coach agent consolidates the plan. Normalised so they always sum to 1.</p>
+    <div class="grid md:grid-cols-3 gap-6">
+      ${Object.entries(AGENTS).map(([k, a]) => `
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-bold flex items-center gap-2">${a.icon} ${a.title.split(' ')[0]}</span>
+            <span id="w-${k}-out" class="font-heading font-extrabold text-lg text-${a.accent}-600"></span>
+          </div>
+          <input id="w-${k}" type="range" min="0" max="100" value="${weights[k]}" oninput="setWeight('${k}', this.value)" class="w-full">
+        </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-3 gap-6 mb-6">
+    ${Object.entries(AGENTS).map(([k, a]) => `
+      <div class="bg-white rounded-[2rem] p-6 shadow-soft border-t-4 ${BORDER_FOR[a.accent]}">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-2xl">${a.icon}</span>
+          <span class="px-2 py-1 bg-${a.accent}-100 text-${a.accent}-700 text-[10px] font-bold rounded-md">AGENT</span>
+        </div>
+        <h3 class="font-heading font-bold text-lg mb-4">${a.title}</h3>
+
+        <p class="text-[11px] font-bold text-oc-gray uppercase mb-1.5">LLM model</p>
+        <select onchange="agentModels['${k}']=this.value" class="w-full mb-4 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold bg-white focus:border-oc-dark transition-colors">
+          ${LLM_MODELS.map(m => `<option ${agentModels[k] === m ? 'selected' : ''}>${m}</option>`).join('')}
+        </select>
+
+        <p class="text-[11px] font-bold text-oc-gray uppercase mb-1.5">Intensity model</p>
+        <div class="bg-${a.accent}-50 border border-${a.accent}-100 rounded-xl p-3 mb-4">
+          <p class="font-heading font-extrabold text-${a.accent}-700">${a.model}</p>
+          <p class="text-[11px] text-${a.accent}-700 font-semibold">Needs: ${esc(a.metric)}</p>
+        </div>
+
+        <p class="text-[11px] font-bold text-oc-gray uppercase mb-1.5">Method families allowed</p>
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          ${a.families.map(f => `<span class="px-2.5 py-1 bg-${a.accent}-100 text-${a.accent}-700 font-bold text-[11px] rounded-lg">${esc(f)}</span>`).join('')}
+        </div>
+
+        <p class="text-[11px] font-bold text-oc-gray uppercase mb-1.5">Knowledge base</p>
+        ${a.library
+          ? `<div class="flex items-baseline gap-2"><span class="font-heading text-3xl font-extrabold text-${a.accent}-600">${a.library}</span><span class="text-[11px] font-bold text-oc-gray">canonical sessions</span></div>
+             <p class="text-[10px] text-oc-gray leading-relaxed mt-1">Provider-native zones — a mapping to ${a.model} is still required.</p>`
+          : `<p class="text-xs text-oc-gray leading-relaxed border border-dashed border-gray-300 rounded-lg p-3">No library yet. This agent generates from its method families.</p>`}
+      </div>`).join('')}
+  </div>
+
+  <div class="grid lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-[2rem] p-6 shadow-soft border-t-4 border-oc-dark">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-2xl">🧠</span>
+        <span class="px-2 py-1 bg-gray-800 text-white text-[10px] font-bold rounded-md">AGENT</span>
+      </div>
+      <h3 class="font-heading font-bold text-lg mb-4">Head coach (coordinator)</h3>
+      <p class="text-xs text-oc-gray mb-4">Consolidates the three experts and resolves conflicts (fatigue accumulation, run/bike interference).</p>
+
+      <p class="text-[11px] font-bold text-oc-gray uppercase mb-1.5">LLM model</p>
+      <select onchange="agentModels.coordinator=this.value" class="w-full mb-4 border-2 border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold bg-white focus:border-oc-dark transition-colors">
+        ${LLM_MODELS.map(m => `<option ${agentModels.coordinator === m ? 'selected' : ''}>${m}</option>`).join('')}
+      </select>
+
+      <p class="text-[11px] font-bold text-oc-gray uppercase mb-1.5">Periodization method</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="setPeriodization('linear')" id="per-linear" class="border-2 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors">Linear</button>
+        <button onclick="setPeriodization('blocks')" id="per-blocks" class="border-2 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors">Blocks</button>
+      </div>
+      <p id="per-desc" class="text-[11px] text-oc-gray mt-2"></p>
+    </div>
+
+    <div class="bg-white rounded-[2rem] p-6 shadow-soft border border-gray-100">
+      <h3 class="font-heading font-bold text-lg mb-4">Accounts</h3>
+      <div class="space-y-3">
+        <div class="flex items-center gap-3 border-2 border-gray-100 rounded-xl p-3">
+          <div class="w-9 h-9 rounded-full bg-violet-50 flex items-center justify-center">🏅</div>
+          <div class="flex-1"><p class="font-bold text-sm leading-tight">Athletes</p><p class="text-[11px] text-oc-gray">4 registered · 1 awaiting validation</p></div>
+          <button onclick="alert('Prototype: account management will be wired to the back-end.')" class="text-xs font-bold text-oc-gray hover:text-oc-dark">Manage</button>
+        </div>
+        <div class="flex items-center gap-3 border-2 border-gray-100 rounded-xl p-3">
+          <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">🧑‍🏫</div>
+          <div class="flex-1"><p class="font-bold text-sm leading-tight">Coaches</p><p class="text-[11px] text-oc-gray">1 registered</p></div>
+          <button onclick="alert('Prototype: account management will be wired to the back-end.')" class="text-xs font-bold text-oc-gray hover:text-oc-dark">Manage</button>
+        </div>
+      </div>
+      <div class="mt-5 pt-5 border-t border-gray-100">
+        <p class="text-[11px] text-oc-gray leading-relaxed">Prototype note: this admin seat is protected by credentials written in this file — anyone can read them in the page source. Real admin access needs server-side authentication.</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+function setWeight(k, v) { weights[k] = Number(v); syncWeights(); }
+
+function syncWeights() {
+  const total = weights.running + weights.cycling + weights.swimming;
+  const norm = k => total === 0 ? 0 : weights[k] / total;
+  Object.keys(AGENTS).forEach(k => {
+    const el = $(`w-${k}-out`);
+    if (el) el.textContent = (norm(k) * 100).toFixed(0) + '%';
+  });
+  const vec = $('w-vector');
+  if (vec) vec.textContent = total === 0
+    ? 'w = (—) · set at least one weight above zero'
+    : `w = (${norm('running').toFixed(2)}, ${norm('cycling').toFixed(2)}, ${norm('swimming').toFixed(2)}) · Σ = 1`;
+  syncPeriodization();
+}
+
+function setPeriodization(mode) { periodization = mode; syncPeriodization(); }
+
+function syncPeriodization() {
+  const on = 'border-oc-dark bg-oc-dark text-white';
+  const off = 'border-gray-200 bg-white text-oc-dark hover:bg-gray-50';
+  const lin = $('per-linear'), blk = $('per-blocks'), desc = $('per-desc');
+  if (!lin || !blk || !desc) return;
+  lin.className = 'border-2 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors ' + (periodization === 'linear' ? on : off);
+  blk.className = 'border-2 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors ' + (periodization === 'blocks' ? on : off);
+  desc.textContent = periodization === 'linear'
+    ? 'Base → Build → Specific → Taper.'
+    : 'Accumulation → Transmutation → Realization → Polish.';
+}
+
+/* ─────────────── INTERVALS.IO INTEGRATION ─────────────── */
+let intervalsDataLoaded = null;
+
+async function fetchIntervalsData() {
+  const athleteId = $('a-intervals-id').value.trim();
+  const apiKey = $('a-intervals-key').value.trim();
+  
+  if (!athleteId || !apiKey) {
+    alert('Please enter both your Intervals.icu Athlete ID and API Key.');
+    return;
+  }
+
+  try {
+    // Intervals.icu API: https://intervals.icu/api/v1
+    const response = await fetch(`https://intervals.icu/api/v1/athlete`, {
+      headers: {
+        'Authorization': 'Bearer ' + apiKey,
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      alert(`Error: Could not reach Intervals.icu (${response.status}). Check your Athlete ID and API Key.`);
+      return;
+    }
+
+    const data = await response.json();
+    
+    // Extract key metrics from the Intervals athlete profile
+    intervalsDataLoaded = {
+      athleteId: athleteId,
+      apiKey: apiKey,
+      name: data.name || 'Unknown',
+      weight: data.weight || null,
+      resting_hr: data.resting_hr || null,
+      current_fitness: data.current_fitness || null,
+      current_fatigue: data.current_fatigue || null,
+      current_form: data.current_form || null,
+      lastActivityDate: data.last_activity_date || null,
+    };
+
+    // Display the connected status
+    const form = $('intervals-form');
+    const connected = $('intervals-connected');
+    const summary = $('intervals-summary');
+    
+    if (form) form.classList.add('hidden');
+    if (connected) connected.classList.remove('hidden');
+    
+    if (summary) {
+      let html = `
+        <div class="bg-white/60 rounded-lg p-2 text-blue-900">
+          <p class="text-[11px] text-blue-700 font-bold">Athlete</p>
+          <p class="font-bold">${esc(intervalsDataLoaded.name)}</p>
+        </div>`;
+      
+      if (intervalsDataLoaded.current_fitness !== null) {
+        html += `<div class="bg-white/60 rounded-lg p-2 text-blue-900"><p class="text-[11px] text-blue-700 font-bold">Fitness</p><p class="font-bold">${intervalsDataLoaded.current_fitness}</p></div>`;
+      }
+      if (intervalsDataLoaded.current_fatigue !== null) {
+        html += `<div class="bg-white/60 rounded-lg p-2 text-blue-900"><p class="text-[11px] text-blue-700 font-bold">Fatigue</p><p class="font-bold">${intervalsDataLoaded.current_fatigue}</p></div>`;
+      }
+      if (intervalsDataLoaded.current_form !== null) {
+        html += `<div class="bg-white/60 rounded-lg p-2 text-blue-900"><p class="text-[11px] text-blue-700 font-bold">Form</p><p class="font-bold">${intervalsDataLoaded.current_form}</p></div>`;
+      }
+      
+      summary.innerHTML = html;
+    }
+    
+    alert('✓ Successfully connected to Intervals.icu!');
+  } catch (e) {
+    console.error('Intervals API error:', e);
+    alert(`Error connecting to Intervals.icu: ${e.message}`);
+  }
+}
+
+function disconnectIntervals() {
+  intervalsDataLoaded = null;
+  const form = $('intervals-form');
+  const connected = $('intervals-connected');
+  
+  if (form) form.classList.remove('hidden');
+  if (connected) connected.classList.add('hidden');
+  
+  $('a-intervals-id').value = '';
+  $('a-intervals-key').value = '';
+}
+
+function getIntervalsInfo(profile) {
+  if (!profile.intervalsData) return '';
+  const d = profile.intervalsData;
+  return `
+    <div class="bg-blue-50 border border-blue-100 rounded-lg p-3">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded">Intervals.icu</span>
+        <p class="text-xs font-bold text-blue-700">${esc(d.name)}</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        ${d.current_fitness !== null ? `<div><span class="text-blue-700">💪 Fitness</span><br><span class="font-bold">${d.current_fitness}</span></div>` : ''}
+        ${d.current_fatigue !== null ? `<div><span class="text-blue-700">😴 Fatigue</span><br><span class="font-bold">${d.current_fatigue}</span></div>` : ''}
+        ${d.current_form !== null ? `<div><span class="text-blue-700">⚡ Form</span><br><span class="font-bold">${d.current_form}</span></div>` : ''}
+        ${d.weight ? `<div><span class="text-blue-700">⚖️ Weight</span><br><span class="font-bold">${d.weight} kg</span></div>` : ''}
+      </div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>

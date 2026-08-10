@@ -1,0 +1,30 @@
+# ─── Python virtual environments (NEVER commit — machine-specific) ──────────
+.venv/
+.venv-old/
+venv/
+env/
+
+# ─── Python caches ──────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# ─── Local config & secrets (each dev makes their own from .env.example) ─────
+.env
+
+# ─── Licensed workout library (personal-use only — shared separately) ────────
+data/
+
+# ─── Editors / IDEs ─────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+
+# ─── OS junk ────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Scratch / build artefacts we don't want in the repo ─────────────────────
+tmp_*.js
+*.pdf
