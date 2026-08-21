@@ -805,7 +805,7 @@ let apiHealth = null;
 let apiBusy = false;
 let lastResult = null;
 let lastError = null;
-let selectedAthlete = 'sarah';
+let selectedAthlete = null;  // coach chooses an athlete before generating
 // When the coach validates, the plan is stored per-athlete here and appears in
 // the athlete view. In-memory only — the real store is the back-end (next step).
 let releasedPlans = {};   // athleteId -> { generatedAt, provider, model, sessions:[{day,code,rationale,detail}] }
@@ -974,6 +974,14 @@ function coachView() {
 /* ─── The live API panel — this is where the coach talks to the agent ──── */
 function apiPanel() {
   const a = COACH_ATHLETES.find(x => x.id === selectedAthlete);
+  if (!a) {
+    return `
+    <div class="lg:col-span-3 bg-white rounded-[2rem] p-6 shadow-soft border border-gray-100 flex flex-col items-center justify-center text-center min-h-[320px]">
+      <div class="text-5xl mb-4">\u{1F448}</div>
+      <h3 class="font-heading font-bold text-xl mb-2">Choose an athlete first</h3>
+      <p class="text-sm text-oc-gray max-w-xs">Pick an athlete from the list to generate their week. Their training days and notes are filled in automatically from their profile.</p>
+    </div>`;
+  }
   const c = a.ctx;
   const dot = apiHealth === null ? 'bg-gray-300'
             : apiHealth.status === 'ok' ? 'bg-oc-green' : 'bg-oc-red';
